@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+    id 'idea'
+}
+
+group = 'tunnely'
+version = '0.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'tunnely.Main'
+    }
+
+    from {
+        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
