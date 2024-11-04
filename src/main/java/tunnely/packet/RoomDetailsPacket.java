@@ -68,6 +68,14 @@ public abstract class RoomDetailsPacket implements Packet {
         return out;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public String getPass() {
+        return pass;
+    }
+
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + "{" +

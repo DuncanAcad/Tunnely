@@ -45,4 +45,8 @@ public class CloseConnectionPacket implements Packet {
                 "message='" + message + '\'' +
                 '}';
     }
+
+    public String getMessage() {
+        return message;
+    }
 }

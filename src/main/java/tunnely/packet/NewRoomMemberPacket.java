@@ -35,4 +35,8 @@ public class NewRoomMemberPacket implements Packet {
                 "userId=" + userId +
                 '}';
     }
+
+    public byte getUserId() {
+        return userId;
+    }
 }
