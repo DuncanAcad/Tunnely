@@ -31,6 +31,8 @@ public class NewRoomMemberPacket implements Packet {
 
     @Override
     public String toString() {
-        return ("User ID: " + userId);
+        return "NewRoomMemberPacket{" +
+                "userId=" + userId +
+                '}';
     }
 }
