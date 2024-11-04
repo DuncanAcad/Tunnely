@@ -35,7 +35,11 @@ public class CloseConnectionPacket implements Packet{
     }
 
     @Override
-    public String toString(){
-        return("message: " + this.message);//this might need to be changed later
+    public String toString() {
+        return ("message: " + this.message);//this might need to be changed later
+    }
+
+    public byte getId(){
+        return this.ID;
     }
 }
