@@ -20,7 +20,12 @@ public class NewRoomMemberPacket implements Packet{
         out[1] = userId;
         return out;
     }
+    @Override
     public byte getId() {
         return ID;
+    }
+    @Override
+    public String toString(){
+        return("User ID: " + userId);
     }
 }
