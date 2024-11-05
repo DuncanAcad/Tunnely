@@ -6,30 +6,30 @@ public class MemberRawDataPacket implements Packet{
 
     public static byte ID = 8;
     private final byte userID;
-    private final String message;
-    public MemberRawDataPacket(byte userID, String message){
+    private final String data;
+    public MemberRawDataPacket(byte userID, String data){
         this.userID = userID;
-        this.message = message;
+        this.data = data;
     }
     public MemberRawDataPacket(byte[] bytes) throws IllegalStateException{
         if(bytes[0] != ID){
             throw new IllegalStateException("Invalid Packet ID for " + this.getClass().getSimpleName());
         }
         userID = bytes[1];
-        byte[] bytesMessage = new byte[bytes.length - 2];
+        byte[] bytesData = new byte[bytes.length - 2];
         for(int i = 2; i < bytes.length; i++){
-            bytesMessage[i - 2] = bytes[i];
+            bytesData[i - 2] = bytes[i];
         }
-        message = new String(bytesMessage, StandardCharsets.UTF_8);
+        data = new String(bytesData, StandardCharsets.UTF_8);
     }
     @Override
     public byte[] toBytes() {
-        byte[] bytesMessage = message.getBytes(StandardCharsets.UTF_8);
-        byte[] out = new byte[2 + bytesMessage.length];
+        byte[] bytesData = data.getBytes(StandardCharsets.UTF_8);
+        byte[] out = new byte[2 + bytesData.length];
         out[0] = ID;
         out[1] = userID;
         for(int i = 2; i < out.length; i++){
-            out[i] = bytesMessage[i - 2];
+            out[i] = bytesData[i - 2];
         }
         return out;
     }
@@ -41,7 +41,7 @@ public class MemberRawDataPacket implements Packet{
     public byte getUserID(){
         return userID;
     }
-    public String getMessage(){
-        return message;
+    public String getData(){
+        return data;
     }
 }
