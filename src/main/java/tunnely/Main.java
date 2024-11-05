@@ -1,9 +1,6 @@
 package tunnely;
 
-import tunnely.packet.CloseConnectionPacket;
-import tunnely.packet.JoinRoomRequestPacket;
-import tunnely.packet.NewRoomMemberPacket;
-import tunnely.packet.OpenRoomRequestPacket;
+import tunnely.packet.*;
 
 import java.util.Arrays;
 
@@ -13,6 +10,9 @@ public class Main {
         testJoinRoomRequestPacket();
         testCloseConnectionPacket();
         testNewRoomMemberPacket();
+        testEvalMemberPacket();
+        testConnectionAcceptedPacket();
+        testMemberRawDataPacket();
     }
 
     private static void testOpenRoomRequestPacket() {
@@ -55,6 +55,39 @@ public class Main {
         byte[] p1Bytes = p1.toBytes();
         System.out.println("p1Bytes = " + Arrays.toString(p1Bytes));
         NewRoomMemberPacket p2 = new NewRoomMemberPacket(p1Bytes);
+        System.out.println("p2 = " + p2);
+        System.out.println();
+    }
+
+    private static void testEvalMemberPacket() {
+        System.out.println("Testing EvalMemberPacket");
+        EvalMemberPacket p1 = new EvalMemberPacket(true, "Welcome!");
+        System.out.println("p1 = " + p1);
+        byte[] p1Bytes = p1.toBytes();
+        System.out.println("p1Bytes = " + Arrays.toString(p1Bytes));
+        EvalMemberPacket p2 = new EvalMemberPacket(p1Bytes);
+        System.out.println("p2 = " + p2);
+        System.out.println();
+    }
+
+    private static void testConnectionAcceptedPacket() {
+        System.out.println("Testing ConnectionAcceptedPacket");
+        ConnectionAcceptedPacket p1 = new ConnectionAcceptedPacket();
+        System.out.println("p1 = " + p1);
+        byte[] p1Bytes = p1.toBytes();
+        System.out.println("p1Bytes = " + Arrays.toString(p1Bytes));
+        ConnectionAcceptedPacket p2 = new ConnectionAcceptedPacket(p1Bytes);
+        System.out.println("p2 = " + p2);
+        System.out.println();
+    }
+
+    private static void testMemberRawDataPacket() {
+        System.out.println("Testing MemberRawDataPacket");
+        MemberRawDataPacket p1 = new MemberRawDataPacket((byte) 21, new byte[]{1, 2, 3, 4, 5});
+        System.out.println("p1 = " + p1);
+        byte[] p1Bytes = p1.toBytes();
+        System.out.println("p1Bytes = " + Arrays.toString(p1Bytes));
+        MemberRawDataPacket p2 = new MemberRawDataPacket(p1Bytes);
         System.out.println("p2 = " + p2);
         System.out.println();
     }
