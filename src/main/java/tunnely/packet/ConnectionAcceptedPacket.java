@@ -1,12 +1,13 @@
 package tunnely.packet;
 
-public class ConnectionAcceptedPacket implements Packet{
+public class ConnectionAcceptedPacket implements Packet {
     public static byte ID = 7;
 
-    public ConnectionAcceptedPacket(){}
+    public ConnectionAcceptedPacket() {
+    }
 
-    public ConnectionAcceptedPacket(byte[] bytes) throws IllegalStateException{
-        if(bytes[0] != ID){
+    public ConnectionAcceptedPacket(byte[] bytes) throws IllegalStateException {
+        if (bytes[0] != ID) {
             throw new IllegalStateException("Invalid Packet ID for " + this.getClass().getSimpleName());
         }
     }
