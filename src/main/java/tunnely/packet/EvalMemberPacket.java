@@ -16,11 +16,7 @@ public class EvalMemberPacket implements Packet {
         if (bytes[0] != ID) {
             throw new IllegalStateException("Invalid Packet ID for " + this.getClass().getSimpleName());
         }
-        if (bytes[1] == 1) {
-            accepted = true;
-        } else {
-            accepted = false;
-        }
+        accepted = bytes[1] == 1;
         byte[] bytesMessage = new byte[bytes.length - 2];
         for (int i = 2; i < bytes.length; i++) {
             bytesMessage[i - 2] = bytes[i];
