@@ -1,7 +1,7 @@
 package tunnely.packet;
 
 public class ConnectionAcceptedPacket implements Packet {
-    public static byte ID = 7;
+    public static byte ID = 5;
 
     public ConnectionAcceptedPacket() {
     }

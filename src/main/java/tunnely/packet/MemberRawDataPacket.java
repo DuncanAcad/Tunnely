@@ -3,7 +3,7 @@ package tunnely.packet;
 
 public class MemberRawDataPacket implements Packet {
 
-    public static byte ID = 8;
+    public static byte ID = 6;
     private final byte userID;
     private final byte[] data;
 

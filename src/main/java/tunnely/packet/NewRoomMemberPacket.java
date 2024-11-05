@@ -2,7 +2,7 @@ package tunnely.packet;
 
 public class NewRoomMemberPacket implements Packet {
 
-    public static byte ID = 5;//might want to change this later
+    public static byte ID = 3;//might want to change this later
     private final byte userId;
 
     public NewRoomMemberPacket(byte userId) {

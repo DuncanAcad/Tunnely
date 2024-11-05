@@ -3,7 +3,7 @@ package tunnely.packet;
 import java.nio.charset.StandardCharsets;
 
 public class EvalMemberPacket implements Packet {
-    public static byte ID = 6;
+    public static byte ID = 4;
     private final boolean accepted;
     private final String message;
 
