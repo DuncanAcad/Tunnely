@@ -18,9 +18,7 @@ public class EvalMemberPacket implements Packet {
         }
         accepted = bytes[1] == 1;
         byte[] bytesMessage = new byte[bytes.length - 2];
-        for (int i = 2; i < bytes.length; i++) {
-            bytesMessage[i - 2] = bytes[i];
-        }
+        System.arraycopy(bytes, 2, bytesMessage, 0, bytes.length - 2);
         message = new String(bytesMessage, StandardCharsets.UTF_8);
     }
 
@@ -34,9 +32,7 @@ public class EvalMemberPacket implements Packet {
         } else {
             out[1] = 0;
         }
-        for (int i = 0; i < bytesMessage.length; i++) {
-            out[i + 2] = bytesMessage[i];
-        }
+        System.arraycopy(bytesMessage, 0, out, 2, bytesMessage.length);
         return out;
     }
 

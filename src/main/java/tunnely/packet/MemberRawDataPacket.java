@@ -18,9 +18,7 @@ public class MemberRawDataPacket implements Packet {
         }
         userID = bytes[1];
         data = new byte[bytes.length - 2];
-        for (int i = 2; i < bytes.length; i++) {
-            data[i - 2] = bytes[i];
-        }
+        System.arraycopy(bytes, 2, data, 0, bytes.length - 2);
     }
 
     @Override
@@ -28,9 +26,7 @@ public class MemberRawDataPacket implements Packet {
         byte[] out = new byte[2 + data.length];
         out[0] = ID;
         out[1] = userID;
-        for (int i = 2; i < out.length; i++) {
-            out[i] = data[i - 2];
-        }
+        System.arraycopy(data, 0, out, 2, out.length - 2);
         return out;
     }
 

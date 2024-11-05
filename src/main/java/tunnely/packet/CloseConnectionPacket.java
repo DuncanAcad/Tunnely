@@ -17,9 +17,7 @@ public class CloseConnectionPacket implements Packet {
             throw new IllegalStateException("Invalid Packet ID for " + this.getClass().getSimpleName());
         }
         byte[] bytesMessage = new byte[bytes.length - 1];
-        for (int i = 1; i < bytes.length; i++) {
-            bytesMessage[i - 1] = bytes[i];
-        }
+        System.arraycopy(bytes, 1, bytesMessage, 0, bytes.length - 1);
         this.message = new String(bytesMessage, StandardCharsets.UTF_8);
     }
 
@@ -29,9 +27,7 @@ public class CloseConnectionPacket implements Packet {
         int packetLength = 1 + messageBytes.length;
         byte[] out = new byte[packetLength];
         out[0] = ID;
-        for (int i = 0; i < messageBytes.length; i++) {
-            out[i + 1] = messageBytes[i];
-        }
+        System.arraycopy(messageBytes, 0, out, 1, messageBytes.length);
         return out;
     }
 
