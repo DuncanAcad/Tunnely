@@ -52,5 +52,13 @@ public class EvalMemberPacket implements Packet {
     public String getMessage() {
         return message;
     }
+
+    @Override
+    public String toString() {
+        return "EvalMemberPacket{" +
+                "accepted=" + accepted +
+                ", message='" + message + '\'' +
+                '}';
+    }
 }
 

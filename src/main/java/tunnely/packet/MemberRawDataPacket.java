@@ -47,12 +47,20 @@ public class MemberRawDataPacket implements Packet {
         return data;
     }
 
-    public String toString() {
-        //turning data into hexadecimal format
+    private String getDataAsHexString() {
+        // https://stackoverflow.com/questions/2817752/how-can-i-convert-a-byte-array-to-hexadecimal-in-java
         StringBuilder sb = new StringBuilder();
         for (byte b : data) {
-            sb.append(String.format("%02X ", b));
+            sb.append(String.format("%02X", b));
         }
-        return ("user ID: " + userID + "data: " + sb);
+        return sb.toString();
+    }
+
+    @Override
+    public String toString() {
+        return "MemberRawDataPacket{" +
+                "userID=" + userID +
+                ", data=" + getDataAsHexString() +
+                '}';
     }
 }
