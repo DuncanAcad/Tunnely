@@ -1,13 +1,12 @@
 package tunnely.packet;
 
-import java.nio.charset.StandardCharsets;
 
 public class MemberRawDataPacket implements Packet{
 
     public static byte ID = 8;
     private final byte userID;
-    private final String data;
-    public MemberRawDataPacket(byte userID, String data){
+    private final byte[] data;
+    public MemberRawDataPacket(byte userID, byte[] data){
         this.userID = userID;
         this.data = data;
     }
@@ -16,20 +15,18 @@ public class MemberRawDataPacket implements Packet{
             throw new IllegalStateException("Invalid Packet ID for " + this.getClass().getSimpleName());
         }
         userID = bytes[1];
-        byte[] bytesData = new byte[bytes.length - 2];
+        data = new byte[bytes.length - 2];
         for(int i = 2; i < bytes.length; i++){
-            bytesData[i - 2] = bytes[i];
+            data[i - 2] = bytes[i];
         }
-        data = new String(bytesData, StandardCharsets.UTF_8);
     }
     @Override
     public byte[] toBytes() {
-        byte[] bytesData = data.getBytes(StandardCharsets.UTF_8);
-        byte[] out = new byte[2 + bytesData.length];
+        byte[] out = new byte[2 + data.length];
         out[0] = ID;
         out[1] = userID;
         for(int i = 2; i < out.length; i++){
-            out[i] = bytesData[i - 2];
+            out[i] = data[i - 2];
         }
         return out;
     }
@@ -41,7 +38,15 @@ public class MemberRawDataPacket implements Packet{
     public byte getUserID(){
         return userID;
     }
-    public String getData(){
+    public byte[] getData(){
         return data;
+    }
+    public String toString(){
+        //turning data into hexadecimal format
+        StringBuilder sb = new StringBuilder();
+        for(byte b : data){
+            sb.append(String.format("%02X ", b));
+        }
+        return("user ID: " + userID + "data: " + sb);
     }
 }
