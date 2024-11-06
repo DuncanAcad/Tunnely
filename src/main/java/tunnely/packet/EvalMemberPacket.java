@@ -1,6 +1,7 @@
 package tunnely.packet;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public class EvalMemberPacket implements Packet {
     public static byte ID = 4;
@@ -51,6 +52,18 @@ public class EvalMemberPacket implements Packet {
                 "accepted=" + accepted +
                 ", message='" + message + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof EvalMemberPacket that)) return false;
+        return accepted == that.accepted && Objects.equals(message, that.message);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(accepted, message);
     }
 }
 

@@ -1,5 +1,7 @@
 package tunnely.packet;
 
+import java.util.Objects;
+
 public class NewRoomMemberPacket implements Packet {
 
     public static byte ID = 3;//might want to change this later
@@ -38,5 +40,17 @@ public class NewRoomMemberPacket implements Packet {
 
     public byte getUserId() {
         return userId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof NewRoomMemberPacket that)) return false;
+        return userId == that.userId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId);
     }
 }

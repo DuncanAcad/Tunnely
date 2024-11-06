@@ -23,4 +23,14 @@ public class ConnectionAcceptedPacket implements Packet {
     public byte getId() {
         return ID;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ConnectionAcceptedPacket;
+    }
+
+    @Override
+    public int hashCode() {
+        return Byte.hashCode(ID);
+    }
 }

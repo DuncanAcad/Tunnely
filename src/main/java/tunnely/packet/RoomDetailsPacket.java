@@ -1,6 +1,7 @@
 package tunnely.packet;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public abstract class RoomDetailsPacket implements Packet {
     private final String name;
@@ -82,5 +83,17 @@ public abstract class RoomDetailsPacket implements Packet {
                 "name='" + name + '\'' +
                 ", pass='" + pass + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RoomDetailsPacket that)) return false;
+        return Objects.equals(name, that.name) && Objects.equals(pass, that.pass);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, pass);
     }
 }

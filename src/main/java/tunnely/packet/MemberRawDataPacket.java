@@ -1,6 +1,9 @@
 package tunnely.packet;
 
 
+import java.util.Arrays;
+import java.util.Objects;
+
 public class MemberRawDataPacket implements Packet {
 
     public static byte ID = 6;
@@ -58,5 +61,17 @@ public class MemberRawDataPacket implements Packet {
                 "userID=" + userID +
                 ", data=" + getDataAsHexString() +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof MemberRawDataPacket that)) return false;
+        return userID == that.userID && Arrays.equals(data, that.data);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userID, Arrays.hashCode(data));
     }
 }

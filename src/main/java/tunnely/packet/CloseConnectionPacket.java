@@ -1,6 +1,7 @@
 package tunnely.packet;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public class CloseConnectionPacket implements Packet {
 
@@ -44,5 +45,17 @@ public class CloseConnectionPacket implements Packet {
 
     public String getMessage() {
         return message;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof CloseConnectionPacket that)) return false;
+        return Objects.equals(message, that.message);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(message);
     }
 }
