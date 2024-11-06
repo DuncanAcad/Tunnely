@@ -1,10 +1,8 @@
-package tunnely;
-
-import tunnely.packet.*;
+package tunnely.packet;
 
 import java.util.Arrays;
 
-public class Main {
+public class PacketTests {
     public static void main(String[] args) {
         testOpenRoomRequestPacket();
         testJoinRoomRequestPacket();
