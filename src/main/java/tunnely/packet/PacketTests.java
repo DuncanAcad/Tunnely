@@ -1,6 +1,7 @@
 package tunnely.packet;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class PacketTests {
     public static void main(String[] args) {
@@ -22,6 +23,7 @@ public class PacketTests {
         OpenRoomRequestPacket p2 = new OpenRoomRequestPacket(p1Bytes);
         System.out.println("p2 = " + p2);
         System.out.println();
+        assert Objects.equals(p1, p2);
     }
 
     private static void testJoinRoomRequestPacket() {
@@ -33,6 +35,7 @@ public class PacketTests {
         JoinRoomRequestPacket p2 = new JoinRoomRequestPacket(p1Bytes);
         System.out.println("p2 = " + p2);
         System.out.println();
+        assert Objects.equals(p1, p2);
     }
 
     private static void testCloseConnectionPacket() {
@@ -44,6 +47,7 @@ public class PacketTests {
         CloseConnectionPacket p2 = new CloseConnectionPacket(p1Bytes);
         System.out.println("p2 = " + p2);
         System.out.println();
+        assert Objects.equals(p1, p2);
     }
 
     private static void testNewRoomMemberPacket() {
@@ -55,6 +59,7 @@ public class PacketTests {
         NewRoomMemberPacket p2 = new NewRoomMemberPacket(p1Bytes);
         System.out.println("p2 = " + p2);
         System.out.println();
+        assert Objects.equals(p1, p2);
     }
 
     private static void testEvalMemberPacket() {
@@ -66,6 +71,7 @@ public class PacketTests {
         EvalMemberPacket p2 = new EvalMemberPacket(p1Bytes);
         System.out.println("p2 = " + p2);
         System.out.println();
+        assert Objects.equals(p1, p2);
     }
 
     private static void testConnectionAcceptedPacket() {
@@ -77,6 +83,7 @@ public class PacketTests {
         ConnectionAcceptedPacket p2 = new ConnectionAcceptedPacket(p1Bytes);
         System.out.println("p2 = " + p2);
         System.out.println();
+        assert Objects.equals(p1, p2);
     }
 
     private static void testMemberRawDataPacket() {
@@ -88,5 +95,6 @@ public class PacketTests {
         MemberRawDataPacket p2 = new MemberRawDataPacket(p1Bytes);
         System.out.println("p2 = " + p2);
         System.out.println();
+        assert Objects.equals(p1, p2);
     }
 }
