@@ -6,6 +6,9 @@ plugins {
 group = 'tunnely'
 version = '0.0.0'
 
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
 repositories {
     mavenCentral()
 }
@@ -14,11 +17,27 @@ dependencies {
 }
 
 jar {
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     manifest {
-        attributes 'Main-Class': 'tunnely.Main'
+        attributes 'Main-Class': 'tunnely.client.TunnelyClient'
     }
 
     from {
         configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+}
+
+tasks.register('middlemanJar', Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'tunnely.middleman.MiddlemanServer'
+    }
+    from sourceSets.main.output
+
+    // Set the archive base name directly
+    archiveBaseName.set("Tunnely-Middleman")
+}
+
+artifacts {
+    archives middlemanJar
 }
