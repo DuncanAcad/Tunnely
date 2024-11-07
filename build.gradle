@@ -33,8 +33,6 @@ tasks.register('middlemanJar', Jar) {
         attributes 'Main-Class': 'tunnely.middleman.MiddlemanServer'
     }
     from sourceSets.main.output
-
-    // Set the archive base name directly
     archiveBaseName.set("Tunnely-Middleman")
 }
 
