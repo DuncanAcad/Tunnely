@@ -57,7 +57,8 @@ public class EvalMemberPacket implements Packet {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof EvalMemberPacket that)) return false;
+        if (!(o instanceof EvalMemberPacket)) return false;
+        EvalMemberPacket that = (EvalMemberPacket) o;
         return accepted == that.accepted && Objects.equals(message, that.message);
     }
 

@@ -45,7 +45,8 @@ public class NewRoomMemberPacket implements Packet {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof NewRoomMemberPacket that)) return false;
+        if (!(o instanceof NewRoomMemberPacket)) return false;
+        NewRoomMemberPacket that = (NewRoomMemberPacket) o;
         return userId == that.userId;
     }
 

@@ -66,7 +66,8 @@ public class MemberRawDataPacket implements Packet {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof MemberRawDataPacket that)) return false;
+        if (!(o instanceof MemberRawDataPacket)) return false;
+        MemberRawDataPacket that = (MemberRawDataPacket) o;
         return userID == that.userID && Arrays.equals(data, that.data);
     }
 

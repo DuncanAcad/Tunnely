@@ -50,7 +50,8 @@ public class CloseConnectionPacket implements Packet {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof CloseConnectionPacket that)) return false;
+        if (!(o instanceof CloseConnectionPacket)) return false;
+        CloseConnectionPacket that = (CloseConnectionPacket) o;
         return Objects.equals(message, that.message);
     }
 

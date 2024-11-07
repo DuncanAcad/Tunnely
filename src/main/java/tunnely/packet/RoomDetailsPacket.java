@@ -88,7 +88,8 @@ public abstract class RoomDetailsPacket implements Packet {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof RoomDetailsPacket that)) return false;
+        if (!(o instanceof RoomDetailsPacket)) return false;
+        RoomDetailsPacket that = (RoomDetailsPacket) o;
         return Objects.equals(name, that.name) && Objects.equals(pass, that.pass);
     }
 
