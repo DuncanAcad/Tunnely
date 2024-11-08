@@ -7,5 +7,7 @@ public class TunnelyClient {
         // TODO: Also obtain middleman server IP:port somehow (probably shouldn't be hardcoded)
 
         // TODO: Send appropriate packet to middleman, interpret responses, start virtual server or prepare to make virtual connections.
+
+        // readAny should be used for getting data from the TCP app and then sending to the middleman once it is in raw data mode.
     }
 }

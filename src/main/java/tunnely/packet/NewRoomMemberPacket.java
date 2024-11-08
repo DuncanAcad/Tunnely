@@ -31,15 +31,13 @@ public class NewRoomMemberPacket implements Packet {
         return ID;
     }
 
-    @Override
-    public String toString() {
-        return "NewRoomMemberPacket{" +
-                "userId=" + userId +
-                '}';
-    }
-
     public byte getUserId() {
         return userId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId);
     }
 
     @Override
@@ -51,7 +49,9 @@ public class NewRoomMemberPacket implements Packet {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(userId);
+    public String toString() {
+        return "NewRoomMemberPacket{" +
+                "userId=" + userId +
+                '}';
     }
 }

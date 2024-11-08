@@ -56,11 +56,8 @@ public class MemberRawDataPacket implements Packet {
     }
 
     @Override
-    public String toString() {
-        return "MemberRawDataPacket{" +
-                "userID=" + userID +
-                ", data=" + getDataAsHexString() +
-                '}';
+    public int hashCode() {
+        return Objects.hash(userID, Arrays.hashCode(data));
     }
 
     @Override
@@ -72,7 +69,10 @@ public class MemberRawDataPacket implements Packet {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(userID, Arrays.hashCode(data));
+    public String toString() {
+        return "MemberRawDataPacket{" +
+                "userID=" + userID +
+                ", data=" + getDataAsHexString() +
+                '}';
     }
 }

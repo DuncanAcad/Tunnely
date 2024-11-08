@@ -36,15 +36,13 @@ public class CloseConnectionPacket implements Packet {
         return ID;
     }
 
-    @Override
-    public String toString() {
-        return "CloseConnectionPacket{" +
-                "message='" + message + '\'' +
-                '}';
-    }
-
     public String getMessage() {
         return message;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(message);
     }
 
     @Override
@@ -56,7 +54,9 @@ public class CloseConnectionPacket implements Packet {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(message);
+    public String toString() {
+        return "CloseConnectionPacket{" +
+                "message='" + message + '\'' +
+                '}';
     }
 }

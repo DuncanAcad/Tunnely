@@ -78,11 +78,8 @@ public abstract class RoomDetailsPacket implements Packet {
     }
 
     @Override
-    public String toString() {
-        return this.getClass().getSimpleName() + "{" +
-                "name='" + name + '\'' +
-                ", pass='" + pass + '\'' +
-                '}';
+    public int hashCode() {
+        return Objects.hash(name, pass);
     }
 
     @Override
@@ -94,7 +91,10 @@ public abstract class RoomDetailsPacket implements Packet {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(name, pass);
+    public String toString() {
+        return this.getClass().getSimpleName() + "{" +
+                "name='" + name + '\'' +
+                ", pass='" + pass + '\'' +
+                '}';
     }
 }

@@ -20,15 +20,15 @@ public class Room {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(name, password);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Room)) return false;
         Room room = (Room) o;
         return Objects.equals(name, room.name) && Objects.equals(password, room.password);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, password);
     }
 }

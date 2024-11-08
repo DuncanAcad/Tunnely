@@ -47,11 +47,8 @@ public class EvalMemberPacket implements Packet {
     }
 
     @Override
-    public String toString() {
-        return "EvalMemberPacket{" +
-                "accepted=" + accepted +
-                ", message='" + message + '\'' +
-                '}';
+    public int hashCode() {
+        return Objects.hash(accepted, message);
     }
 
     @Override
@@ -63,8 +60,11 @@ public class EvalMemberPacket implements Packet {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(accepted, message);
+    public String toString() {
+        return "EvalMemberPacket{" +
+                "accepted=" + accepted +
+                ", message='" + message + '\'' +
+                '}';
     }
 }
 

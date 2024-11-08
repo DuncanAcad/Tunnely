@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class MiddlemanServer {
-    private static List<Room> rooms = Collections.synchronizedList(new ArrayList<>());
+    private static final List<Room> rooms = Collections.synchronizedList(new ArrayList<>());
 
     private static ServerSocket serverSocket;
 

@@ -25,12 +25,12 @@ public class ConnectionAcceptedPacket implements Packet {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return obj instanceof ConnectionAcceptedPacket;
+    public int hashCode() {
+        return Byte.hashCode(ID);
     }
 
     @Override
-    public int hashCode() {
-        return Byte.hashCode(ID);
+    public boolean equals(Object obj) {
+        return obj instanceof ConnectionAcceptedPacket;
     }
 }
