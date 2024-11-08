@@ -21,7 +21,4 @@ public final class PacketHelper {
 
         // TODO: Receive bytes of found length and return
     }
-
-    // TODO: Add methods for receiving specific amounts of bytes from a socket, converting 4 bytes to int and other way
-    // These should all be found in SimpleChat
 }
