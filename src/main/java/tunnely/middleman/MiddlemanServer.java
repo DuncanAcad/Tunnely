@@ -128,11 +128,6 @@ public class MiddlemanServer {
         room.join(clientSocket);
     }
 
-    // we should have the ability for the server to close rooms should we not?
-    private static void closeRoom(int portNum) {
-        throw new RuntimeException("Not implemented yet!"); // TODO
-    }
-
     private static Room getRoom(String name) {
         synchronized (rooms) {
             checkClosedRooms();
