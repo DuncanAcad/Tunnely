@@ -128,7 +128,7 @@ public class Room {
             // inputStream -> raw packet to room host with id
             // raw packet from room host with id -> output stream
             byte[] bytes;
-            while ((bytes = SocketUtil.readAny(roomMember.getInputStream(), 4096)) != null) {
+            while (!this.isClosed() && (bytes = SocketUtil.readAny(roomMember.getInputStream(), 4096)) != null) {
                 sendRawDataToRoomHost(userId, bytes);
             }
         } catch (Throwable t) {
@@ -182,7 +182,7 @@ public class Room {
     }
 
     private void runHostReceiveLoop() throws IOException {
-        while (true) {
+        while (!this.isClosed()) {
             byte[] bytes = PacketHelper.receivePacketBytes(roomHostConnection);
             if (bytes == null) {
                 this.closeRoom("No packet received.");
