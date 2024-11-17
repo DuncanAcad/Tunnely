@@ -7,11 +7,11 @@ import java.util.Objects;
 public class MemberRawDataPacket implements Packet {
     public static byte ID = 6;
 
-    private final byte userID;
+    private final byte userId;
     private final byte[] data;
 
-    public MemberRawDataPacket(byte userID, byte[] data) {
-        this.userID = userID;
+    public MemberRawDataPacket(byte userId, byte[] data) {
+        this.userId = userId;
         this.data = data;
     }
 
@@ -19,7 +19,7 @@ public class MemberRawDataPacket implements Packet {
         if (bytes[0] != ID) {
             throw new IllegalStateException("Invalid Packet ID for " + this.getClass().getSimpleName());
         }
-        userID = bytes[1];
+        userId = bytes[1];
         data = new byte[bytes.length - 2];
         System.arraycopy(bytes, 2, data, 0, bytes.length - 2);
     }
@@ -28,7 +28,7 @@ public class MemberRawDataPacket implements Packet {
     public byte[] toBytes() {
         byte[] out = new byte[2 + data.length];
         out[0] = ID;
-        out[1] = userID;
+        out[1] = userId;
         System.arraycopy(data, 0, out, 2, out.length - 2);
         return out;
     }
@@ -38,8 +38,8 @@ public class MemberRawDataPacket implements Packet {
         return ID;
     }
 
-    public byte getUserID() {
-        return userID;
+    public byte getUserId() {
+        return userId;
     }
 
     public byte[] getData() {
@@ -57,7 +57,7 @@ public class MemberRawDataPacket implements Packet {
 
     @Override
     public int hashCode() {
-        return Objects.hash(userID, Arrays.hashCode(data));
+        return Objects.hash(userId, Arrays.hashCode(data));
     }
 
     @Override
@@ -65,13 +65,13 @@ public class MemberRawDataPacket implements Packet {
         if (this == o) return true;
         if (!(o instanceof MemberRawDataPacket)) return false;
         MemberRawDataPacket that = (MemberRawDataPacket) o;
-        return userID == that.userID && Arrays.equals(data, that.data);
+        return userId == that.userId && Arrays.equals(data, that.data);
     }
 
     @Override
     public String toString() {
         return "MemberRawDataPacket{" +
-                "userID=" + userID +
+                "userId=" + userId +
                 ", data=" + getDataAsHexString() +
                 '}';
     }

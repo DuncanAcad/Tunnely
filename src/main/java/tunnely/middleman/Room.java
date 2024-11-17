@@ -196,7 +196,7 @@ public class Room {
                     return;
                 case /*MemberRawDataPacket.ID*/6:
                     MemberRawDataPacket mrdp = new MemberRawDataPacket(bytes);
-                    this.sendRawToMember(mrdp.getUserID(), mrdp.getData());
+                    this.sendRawToMember(mrdp.getUserId(), mrdp.getData());
                     break;
                 case /*EvalMemberPacket.ID*/4:
                     // To be processed by the thread expecting this
@@ -208,12 +208,12 @@ public class Room {
         }
     }
 
-    private void sendRawToMember(byte userID, byte[] data) {
-        Socket memberConnection = this.roomMemberConnections.getOrDefault(userID, null);
+    private void sendRawToMember(byte userId, byte[] data) {
+        Socket memberConnection = this.roomMemberConnections.getOrDefault(userId, null);
         if (memberConnection == null) {
             synchronized (this) {
                 try {
-                    PacketHelper.sendPacket(roomHostConnection, new MemberLeftPacket(userID));
+                    PacketHelper.sendPacket(roomHostConnection, new MemberLeftPacket(userId));
                 } catch (Exception e) {
                     this.closeRoom("Failed to communicate with room host.");
                 }
@@ -223,9 +223,9 @@ public class Room {
         try {
             memberConnection.getOutputStream().write(data);
         } catch (Exception e) {
-            System.out.println("Failed to send data to member " + userID + " in room " + getName());
+            System.out.println("Failed to send data to member " + userId + " in room " + getName());
             e.printStackTrace();
-            roomMemberConnections.remove(userID);
+            roomMemberConnections.remove(userId);
             SocketUtil.carelesslyClose(memberConnection);
         }
     }
