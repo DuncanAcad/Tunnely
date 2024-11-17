@@ -2,6 +2,7 @@ package tunnely.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ServerSocket;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -57,5 +58,25 @@ public class SocketUtil {
         if (bytes.length != 4) throw new IllegalArgumentException();
         // https://stackoverflow.com/questions/2383265/convert-4-bytes-to-int
         return ByteBuffer.wrap(bytes).getInt();
+    }
+
+    /**
+     * Used to check if port is in use to avoid errors due to overlapping ports.
+     * Will attempt to create an empty unused socket with the port, and immediately close it.
+     *
+     * @param portNum the port to test
+     *
+     * @return true if the socket is free, otherwise false
+     */
+    public static boolean isPortFree(int portNum) {
+        try (ServerSocket test = new ServerSocket(portNum)) {
+            // if no exception thrown, port is open
+            test.close(); // currently closes socket as I'm not 100% sure that this will allow a new socket in the same
+            // place as the test
+            return true;
+        } catch (IOException testExc) {
+            //if exception is thrown by creating a socket, it means the port is busy
+            return false;
+        }
     }
 }
