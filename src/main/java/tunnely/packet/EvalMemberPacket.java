@@ -66,5 +66,9 @@ public class EvalMemberPacket implements Packet {
                 ", message='" + message + '\'' +
                 '}';
     }
+
+    public boolean isAccepted() {
+        return accepted;
+    }
 }
 
