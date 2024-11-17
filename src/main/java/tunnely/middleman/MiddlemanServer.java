@@ -40,6 +40,7 @@ public class MiddlemanServer {
         while (!serverSocket.isClosed()) {
             final Socket clientSocket;
             try {
+                System.out.println("Listening for a new client...");
                 clientSocket = serverSocket.accept();
             } catch (Throwable t) {
                 // No errors needed if the server was simply closed.
@@ -48,6 +49,7 @@ public class MiddlemanServer {
                 t.printStackTrace();
                 continue;
             }
+            System.out.println("New client accepted, handling...");
             new Thread(() -> tryHandleNewConnection(clientSocket), "Connection Thread: " + clientSocket.getInetAddress()).start();
         }
 
@@ -74,9 +76,11 @@ public class MiddlemanServer {
         byte packetId = bytes[0];
         try {
             if (packetId == OpenRoomRequestPacket.ID) {
+                System.out.println("Client " + clientSocket.getInetAddress() + " wants to open a room.");
                 OpenRoomRequestPacket orrp = new OpenRoomRequestPacket(bytes);
                 addRoom(orrp.getName(), orrp.getPass(), clientSocket);
             } else if (packetId == JoinRoomRequestPacket.ID) {
+                System.out.println("Client " + clientSocket.getInetAddress() + " wants to join a room.");
                 // "The room joiner asks the middleman to connect with a name and password."
                 JoinRoomRequestPacket jrrp = new JoinRoomRequestPacket(bytes);
                 joinRoom(jrrp.getName(), jrrp.getPass(), clientSocket);
@@ -107,6 +111,7 @@ public class MiddlemanServer {
         }
         Room room = new Room(hostSocket, name, password);
         rooms.add(room);
+        System.out.println("Client " + hostSocket.getInetAddress() + " has created room " + room.getName());
         room.start();
     }
 
@@ -125,6 +130,7 @@ public class MiddlemanServer {
             return;
         }
         Room room = getRoom(name);
+        System.out.println("Client " + clientSocket.getInetAddress() + " is now joining room " + room.getName());
         room.join(clientSocket);
     }
 

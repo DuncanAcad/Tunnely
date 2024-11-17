@@ -70,19 +70,6 @@ public class Room {
 
         // "The room host accepts the new user and stores any info about it (user id), and then tells the middleman that it will accept the user."
 
-        // TODO: let main loop receive the bytes and add to evalMemberPackets
-        byte[] bytes = PacketHelper.receivePacketBytes(roomHostConnection);
-        if (bytes == null) {
-            // Uh oh, unexpected response from room host, that's real bad
-            closeRoom("Closing room: improper/invalid/no response.");
-            SocketUtil.carelesslyClose(roomMember);
-            return;
-        }
-        if (bytes[0] != EvalMemberPacket.ID) {
-            // Uh oh, unexpected response from room host, that's real bad
-            return;
-        }
-
         // Wait for a latestEvalMemberPacket
         long startWaitTime = System.currentTimeMillis();
         while (latestEvalMemberPacket == null) {
@@ -91,10 +78,14 @@ public class Room {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            if (System.currentTimeMillis() - startWaitTime > 10000) {
+            if (System.currentTimeMillis() - startWaitTime > 10000 || isClosed()) {
                 // Uh oh, no eval member response from room host for 10 seconds straight, that's real bad
-                if (isClosed()) return;
-                closeRoom("Closing room: improper/invalid/no response.");
+                if (!isClosed()) {
+                    closeRoom("Closing room: improper/invalid/no response.");
+                    PacketHelper.sendPacket(roomMember, new CloseConnectionPacket("Room host is unresponsive."));
+                } else {
+                    PacketHelper.sendPacket(roomMember, new CloseConnectionPacket("Room was closed or ended abruptly."));
+                }
                 SocketUtil.carelesslyClose(roomMember);
                 return;
             }
@@ -117,26 +108,29 @@ public class Room {
         roomMemberConnections.put(newId, roomMember);
 
         // "the packet system is then abandoned for this connection, and it is now just sending raw data for whatever application is in use."
-
-        byte userId = newId;
-        new Thread(() -> {
-            try {
-                this.openRawDataLineReceiver(userId, roomMember);
-            } catch (Throwable t) {
-            }
-        }).start();
+        final byte userId = newId;
+        new Thread(() -> openRawDataLineReceiver(roomMember, userId)).start();
     }
+
 
     /**
      * This method runs receives all bytes from a room member, and sends them to the room host with the MemberRawDataPacket.
-     * Sending data to the member is done after receiving data from the room host, so it is done in the main loop.
+     * Sending data to the member is done after receiving data from the room host, so it is done in runHostReceiveLoop.
      */
-    private void openRawDataLineReceiver(byte userId, Socket roomMember) throws IOException {
-        // inputStream -> raw packet to room host with id
-        // raw packet from room host with id -> output stream
-        byte[] bytes;
-        while ((bytes = SocketUtil.readAny(roomMember.getInputStream(), 4096)) != null) {
-            sendToRoomHost(userId, bytes);
+    private void openRawDataLineReceiver(Socket roomMember, byte userId) {
+        try {
+            // inputStream -> raw packet to room host with id
+            // raw packet from room host with id -> output stream
+            byte[] bytes;
+            while ((bytes = SocketUtil.readAny(roomMember.getInputStream(), 4096)) != null) {
+                sendToRoomHost(userId, bytes);
+            }
+        } catch (Throwable t) {
+            // Goodbye this user!
+            SocketUtil.carelesslyClose(roomMember);
+            synchronized (Room.this) {
+                roomMemberConnections.remove(userId);
+            }
         }
     }
 
@@ -202,6 +196,18 @@ public class Room {
     }
 
     private void sendRawToMember(byte userID, byte[] data) {
-
+        Socket memberConnection = this.roomMemberConnections.getOrDefault(userID, null);
+        if (memberConnection == null) {
+            // TODO: some sort of RoomMemberLeftPacket
+            return;
+        }
+        try {
+            memberConnection.getOutputStream().write(data);
+        } catch (IOException e) {
+            System.out.println("Failed to send data to member " + userID + " in room " + getName());
+            e.printStackTrace();
+            roomMemberConnections.remove(userID);
+            SocketUtil.carelesslyClose(memberConnection);
+        }
     }
 }
