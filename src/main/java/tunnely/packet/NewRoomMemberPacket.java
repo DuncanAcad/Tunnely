@@ -3,8 +3,8 @@ package tunnely.packet;
 import java.util.Objects;
 
 public class NewRoomMemberPacket implements Packet {
+    public static byte ID = 3;
 
-    public static byte ID = 3;//might want to change this later
     private final byte userId;
 
     public NewRoomMemberPacket(byte userId) {

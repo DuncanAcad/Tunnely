@@ -4,8 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class CloseConnectionPacket implements Packet {
-
-    public static byte ID = 2;// may want to change the id later
+    public static byte ID = 2;
 
     private final String message;
 

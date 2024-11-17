@@ -5,6 +5,7 @@ import java.util.Objects;
 
 public class EvalMemberPacket implements Packet {
     public static byte ID = 4;
+
     private final boolean accepted;
     private final String message;
 
