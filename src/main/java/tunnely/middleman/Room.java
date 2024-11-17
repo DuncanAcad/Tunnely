@@ -66,7 +66,13 @@ public class Room {
         }
 
         // "and will tell the room host of the new user."
-        PacketHelper.sendPacket(roomHostConnection, new NewRoomMemberPacket(newId));
+        try {
+            PacketHelper.sendPacket(roomHostConnection, new NewRoomMemberPacket(newId));
+        } catch (Exception e) {
+            this.closeRoom("Failed to communicate with room host.");
+            SocketUtil.carelesslyClose(roomMember);
+            return;
+        }
 
         // "The room host accepts the new user and stores any info about it (user id), and then tells the middleman that it will accept the user."
 
@@ -123,18 +129,25 @@ public class Room {
             // raw packet from room host with id -> output stream
             byte[] bytes;
             while ((bytes = SocketUtil.readAny(roomMember.getInputStream(), 4096)) != null) {
-                sendToRoomHost(userId, bytes);
+                sendRawDataToRoomHost(userId, bytes);
             }
         } catch (Throwable t) {
             // Goodbye this user!
             SocketUtil.carelesslyClose(roomMember);
-            synchronized (Room.this) {
+            synchronized (this) {
                 roomMemberConnections.remove(userId);
+                synchronized (this) {
+                    try {
+                        PacketHelper.sendPacket(roomHostConnection, new MemberLeftPacket(userId));
+                    } catch (Exception e) {
+                        this.closeRoom("Failed to communicate with room host.");
+                    }
+                }
             }
         }
     }
 
-    private synchronized void sendToRoomHost(byte userId, byte[] bytes) throws IOException {
+    private synchronized void sendRawDataToRoomHost(byte userId, byte[] bytes) throws IOException {
         PacketHelper.sendPacket(roomHostConnection, new MemberRawDataPacket(userId, bytes));
     }
 
@@ -198,12 +211,18 @@ public class Room {
     private void sendRawToMember(byte userID, byte[] data) {
         Socket memberConnection = this.roomMemberConnections.getOrDefault(userID, null);
         if (memberConnection == null) {
-            // TODO: some sort of RoomMemberLeftPacket
+            synchronized (this) {
+                try {
+                    PacketHelper.sendPacket(roomHostConnection, new MemberLeftPacket(userID));
+                } catch (Exception e) {
+                    this.closeRoom("Failed to communicate with room host.");
+                }
+            }
             return;
         }
         try {
             memberConnection.getOutputStream().write(data);
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("Failed to send data to member " + userID + " in room " + getName());
             e.printStackTrace();
             roomMemberConnections.remove(userID);
