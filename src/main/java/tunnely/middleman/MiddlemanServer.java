@@ -16,9 +16,8 @@ import java.util.Scanner;
 
 public class MiddlemanServer {
     private static final List<Room> rooms = Collections.synchronizedList(new ArrayList<>());
-    private static ServerSocket serverSocket;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         System.out.println("Starting Tunnely Middleman Server...");
         // Used System.in instead of Args in case of port already being in use, it will be easier
         // to check the exception in this case, if exception found, enter new port number
@@ -28,12 +27,31 @@ public class MiddlemanServer {
             portNum = new Scanner(System.in).nextInt();
         } while (!SocketUtil.isPortFree(portNum));
 
-        serverSocket = new ServerSocket(portNum);
+        final ServerSocket serverSocket;
+        try {
+            serverSocket = new ServerSocket(portNum);
+        } catch (IOException e) {
+            System.out.println("Failed to start middleman server!");
+            e.printStackTrace();
+            return;
+        }
 
-        while (true) {
-            Socket clientSocket = serverSocket.accept();
+        // Client accepting loop
+        while (!serverSocket.isClosed()) {
+            final Socket clientSocket;
+            try {
+                clientSocket = serverSocket.accept();
+            } catch (Throwable t) {
+                // No errors needed if the server was simply closed.
+                if (serverSocket.isClosed()) continue;
+                System.out.println("Failed to accept connection!");
+                t.printStackTrace();
+                continue;
+            }
             new Thread(() -> tryHandleNewConnection(clientSocket), "Connection Thread: " + clientSocket.getInetAddress()).start();
         }
+
+        System.out.println("Server socket has been closed.");
     }
 
     private static void tryHandleNewConnection(Socket clientSocket) {
@@ -43,17 +61,14 @@ public class MiddlemanServer {
             System.out.println("Failed to handle client connection: " + clientSocket + "\n Error Below:");
             t.printStackTrace();
             // Try closing to clean up, if it fails, that's alright
-            if (!clientSocket.isClosed()) try {
-                clientSocket.close();
-            } catch (IOException ignored) {
-            }
+            SocketUtil.carelesslyClose(clientSocket);
         }
     }
 
     private static void handleNewConnection(Socket clientSocket) throws IOException {
         byte[] bytes = PacketHelper.receivePacketBytes(clientSocket);
         if (bytes == null) {
-            clientSocket.close();
+            SocketUtil.carelesslyClose(clientSocket);
             return;
         }
         byte packetId = bytes[0];
@@ -62,15 +77,16 @@ public class MiddlemanServer {
                 OpenRoomRequestPacket orrp = new OpenRoomRequestPacket(bytes);
                 addRoom(orrp.getName(), orrp.getPass(), clientSocket);
             } else if (packetId == JoinRoomRequestPacket.ID) {
+                // "The room joiner asks the middleman to connect with a name and password."
                 JoinRoomRequestPacket jrrp = new JoinRoomRequestPacket(bytes);
                 joinRoom(jrrp.getName(), jrrp.getPass(), clientSocket);
             } else {
                 PacketHelper.sendPacket(clientSocket, new CloseConnectionPacket("Invalid packet received! Should be an OpenRoomRequestPacket or a JoinRoomRequestPacket."));
-                clientSocket.close();
+                SocketUtil.carelesslyClose(clientSocket);
             }
         } catch (IllegalStateException /*Thrown by packet constructors*/ e) {
             PacketHelper.sendPacket(clientSocket, new CloseConnectionPacket("Invalid packet received! Correct packet ID, but invalid data format."));
-            clientSocket.close();
+            SocketUtil.carelesslyClose(clientSocket);
         }
     }
 
@@ -85,21 +101,26 @@ public class MiddlemanServer {
     private static void addRoom(String name, String password, Socket hostSocket) throws IOException {
         if (roomExists(name)) {
             PacketHelper.sendPacket(hostSocket, new CloseConnectionPacket("Cannot open room: room already exists."));
+            // No careless close here because we know the connection is going "normally", just a rejection for room name
             hostSocket.close();
             return;
         }
         Room room = new Room(hostSocket, name, password);
         rooms.add(room);
+        room.start();
     }
 
     private static void joinRoom(String name, String password, Socket clientSocket) throws IOException {
+        // "Returns an error message if room does not exist or if the password is wrong."
         if (!roomExists(name)) {
             PacketHelper.sendPacket(clientSocket, new CloseConnectionPacket("Cannot join room: room does not exist."));
+            // No careless close here because we know the connection is going "normally", just a rejection for non-existent room
             clientSocket.close();
             return;
         }
         if (!hasCorrectRoomPassword(name, password)) {
             PacketHelper.sendPacket(clientSocket, new CloseConnectionPacket("Cannot join room: incorrect password."));
+            // No careless close here because we know the connection is going "normally", just a rejection for wrong password
             clientSocket.close();
             return;
         }
@@ -114,7 +135,14 @@ public class MiddlemanServer {
 
     private static Room getRoom(String name) {
         synchronized (rooms) {
+            checkClosedRooms();
             return rooms.stream().filter(room -> room.getName().equals(name)).findFirst().orElse(null);
+        }
+    }
+
+    private static void checkClosedRooms() {
+        synchronized (rooms) {
+            rooms.removeIf(Room::isClosed);
         }
     }
 }

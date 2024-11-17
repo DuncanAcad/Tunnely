@@ -1,8 +1,10 @@
 package tunnely.util;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -72,11 +74,19 @@ public class SocketUtil {
         try (ServerSocket test = new ServerSocket(portNum)) {
             // if no exception thrown, port is open
             test.close(); // currently closes socket as I'm not 100% sure that this will allow a new socket in the same
+            SocketUtil.carelesslyClose(test);
             // place as the test
             return true;
         } catch (IOException testExc) {
             //if exception is thrown by creating a socket, it means the port is busy
             return false;
+        }
+    }
+
+    public static void carelesslyClose(Closeable socket) {
+        try {
+            socket.close();
+        } catch (Throwable ignored) {
         }
     }
 }
