@@ -168,7 +168,7 @@ public class Room {
     }
 
     public boolean isClosed() {
-        return closed; // TODO use this method in MiddlemanServer to remove removes, make a checkClosedRooms method to remove them and use checkClosedRooms at the start of every join/create request
+        return closed;
     }
 
     public void start() {
