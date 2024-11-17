@@ -8,6 +8,9 @@ public abstract class RoomDetailsPacket implements Packet {
     private final String pass;
 
     public RoomDetailsPacket(String name, String pass) {
+        if (name.isEmpty()) {
+            throw new IllegalStateException("Room name cannot be empty!");
+        }
         this.name = name;
         this.pass = pass;
     }
@@ -31,6 +34,9 @@ public abstract class RoomDetailsPacket implements Packet {
         }
 
         this.name = new String(nameBytes, StandardCharsets.UTF_8);
+        if (this.name.isEmpty()) {
+            throw new IllegalStateException("Room name cannot be empty!");
+        }
         this.pass = new String(passBytes, StandardCharsets.UTF_8);
     }
 
