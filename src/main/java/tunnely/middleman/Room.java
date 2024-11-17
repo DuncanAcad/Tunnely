@@ -93,6 +93,7 @@ public class Room {
             }
             if (System.currentTimeMillis() - startWaitTime > 10000) {
                 // Uh oh, no eval member response from room host for 10 seconds straight, that's real bad
+                if (isClosed()) return;
                 closeRoom("Closing room: improper/invalid/no response.");
                 SocketUtil.carelesslyClose(roomMember);
                 return;
