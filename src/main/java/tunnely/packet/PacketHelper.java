@@ -1,6 +1,10 @@
 package tunnely.packet;
 
+import tunnely.util.SocketUtil;
+
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 public final class PacketHelper {
@@ -8,20 +12,20 @@ public final class PacketHelper {
         // No constructing objects of this class!
     }
 
-    // Tip: socket.getInputStream() can be used to get an InputStream, which can be used with readSpecific to get data from the socket connection
-    //      socket.getOutputStream() can be used to get an OutputStream, which can send data to the socket connection
-
     public static void sendPacket(Socket socket, Packet packet) throws IOException {
-        throw new RuntimeException("Not implemented yet!");
-        // TODO: Convert packet to bytes using its method and get length
-
-        // TODO: Send packet length as 4 bytes, then send packet bytes
+        byte[] bytes = packet.toBytes();
+        int length = bytes.length;
+        OutputStream outputStream = socket.getOutputStream();
+        // Send 4 bytes containing length
+        outputStream.write(SocketUtil.intToBytes(length));
+        // Send bytes of that length
+        outputStream.write(bytes);
     }
 
     public static byte[] receivePacketBytes(Socket socket) throws IOException {
-        throw new RuntimeException("Not implemented yet!");
-        // TODO: Receive 4 bytes, convert to an int to get length
-
-        // TODO: Receive bytes of found length and return
+        InputStream inputStream = socket.getInputStream();
+        byte[] bytes = SocketUtil.readSpecific(inputStream, 4);
+        if (bytes == null) return null;
+        return SocketUtil.readSpecific(inputStream, SocketUtil.bytesToInt(bytes));
     }
 }
