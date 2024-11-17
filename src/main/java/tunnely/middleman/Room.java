@@ -133,17 +133,17 @@ public class Room {
             }
         } catch (Throwable t) {
             // Goodbye this user!
-            SocketUtil.carelesslyClose(roomMember);
-            synchronized (this) {
-                roomMemberConnections.remove(userId);
-                synchronized (this) {
-                    try {
-                        PacketHelper.sendPacket(roomHostConnection, new MemberLeftPacket(userId));
-                    } catch (Exception e) {
-                        this.closeRoom("Failed to communicate with room host.");
-                    }
-                }
-            }
+            removeMember(userId);
+        }
+    }
+
+    private synchronized void removeMember(byte userId) {
+        Socket socket = roomMemberConnections.remove(userId);
+        if (socket != null) SocketUtil.carelesslyClose(socket);
+        try {
+            PacketHelper.sendPacket(roomHostConnection, new MemberLeftPacket(userId));
+        } catch (Exception e) {
+            this.closeRoom("Failed to communicate with room host.");
         }
     }
 
@@ -211,13 +211,7 @@ public class Room {
     private void sendRawToMember(byte userId, byte[] data) {
         Socket memberConnection = this.roomMemberConnections.getOrDefault(userId, null);
         if (memberConnection == null) {
-            synchronized (this) {
-                try {
-                    PacketHelper.sendPacket(roomHostConnection, new MemberLeftPacket(userId));
-                } catch (Exception e) {
-                    this.closeRoom("Failed to communicate with room host.");
-                }
-            }
+            removeMember(userId);
             return;
         }
         try {
