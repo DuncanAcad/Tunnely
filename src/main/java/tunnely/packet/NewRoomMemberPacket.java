@@ -20,10 +20,7 @@ public class NewRoomMemberPacket implements Packet {
 
     @Override
     public byte[] toBytes() {
-        byte[] out = new byte[2];
-        out[0] = ID;
-        out[1] = userId;
-        return out;
+        return new byte[]{ID, userId};
     }
 
     @Override
