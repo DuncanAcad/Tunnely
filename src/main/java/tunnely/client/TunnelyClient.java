@@ -7,6 +7,7 @@ import java.util.Scanner;
 
 public class TunnelyClient {
 	private static Socket middleman;
+	//private static String lastInput;
 	
 	public static void main(String[] args) {
 		System.out.println("Starting Tunnely Client...");
@@ -27,13 +28,10 @@ public class TunnelyClient {
 			return; // None of the Socket exceptions are recoverable.
 		}
 		
-		while(requstRoom().ID == 2); // Prompts user for input and searches for a room.
+		while(requstRoom().getId() == 2); // Prompts user for input and searches for a room.
 		
-		// new thread(() -> sendRawData());
-
-		// TODO: Send appropriate packet to middleman, interpret responses, start virtual server or prepare to make virtual connections.
-		// TODO: Accept/decline new users who attempt to join.
-		// TODO: One thread for sending messages to middleman, one thread for reading messages, and one thread for accepting users.
+		// new thread(() -> sendRawData()).start();
+		// processData();
 		
 		System.out.prinln("Middleman connection closed. Ending process.");
 	}
@@ -67,7 +65,7 @@ public class TunnelyClient {
 			return null; // null return indicates requestRoom was unsuccessful.
 		}
 		
-		// rmscn.close();
+		// rqscn.close();
 		
 		byte[] bytes = PacketHelper.receivePacketBytes(middleman); // Listen for middleman response.
 		if(bytes[0] == 2) { // Connection was refused/closed.
@@ -80,25 +78,50 @@ public class TunnelyClient {
 	}
 	
 	public static void sendRawData() {
-		// readAny should be used for getting data from the TCP app and then sending to the middleman once it is in raw data mode.
+		while(!middleman.isClosed()) {
+			// TODO: Send data from our TCP app to the middleman in raw data mode.
+			// readAny should be used for getting data from the TCP app and then sending to the middleman once it is in raw data mode
+			// middleman.getOutputStream().write( );
+		}
 	}
 	
+	// Processes incoming data, both in raw format and packet format.
 	public static void processData() {
 		while(!middleman.isClosed()) {
-			
-			receivePacketBytes(middleman);
-			// Implement timeout for serviceJoinRequest.
+			byte[] bytes = PacketHelper.receivePacketBytes(middleman);
+			switch(bytes[0]) {
+				case 2: // Close Connection.
+					CloseConnectionPacket close = new CloseConnectionPacket(bytes);
+					System.out.println(close.getMessage());
+					return; // Leave the data-processing loop.
+					
+				case 3: // New Member joining.
+					new thread(() -> serviceJoinRequest(new NewRoomMemberPacket(bytes))).start(); // new thread to process a join request.
+					break;
+					
+				case 7: // Member Left.
+					MemberLeftPacket left = new MemberLeftPacket(bytes);
+					System.out.println("User " + left.getUserId() + " disconnected.");
+					break;
+					
+				default: // Raw data packet.
+					// TODO: Read in Raw Data Packets from Middleman.
+			}
 		}
 	}
 	
 	// Services incoming join requests via NewRoomMemberPacket.
 	// Room's join() method is synchronized meaning it orders multiple requests at once.
 	public static void serviceJoinRequest(NewRoomMemberPacket joinRq) {
-		Scanner rqscn = new Scanner(System.in);
 		System.out.prinln("User " + joinRq.getUserId() + " is attempting to join.");
 		System.out.print("Enter \'Y\' to accept, or provide a reason for rejection:");
-		String hostMessage = rqscn.nextLine();
+		String hostMessage = "N"; // "No" by default.
 		
+		hostMessage = new Scanner(System.in).nextLine();
+		// TODO: Add a timelimit for response using another thread.
+		// new thread(() -> inputRequest()).start();
+		// sleep(9000);
+		// Check thread return value somehow. Force close if still running.
 		
 		try {
 			if(hostMessage.toUpper().equals("Y")) {
@@ -110,4 +133,11 @@ public class TunnelyClient {
 			System.out.println("Failed to send response.");
 		}
 	}
+	
+	/* Thread for scanning user inputs. Designed to be interrupted after a given timeslice.
+	public static synchronized void inputRequest() {
+		Scanner rqscn = new Scanner(System.in);
+		lastInput = rqscn.nextLine();
+	}
+	*/
 }
