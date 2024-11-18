@@ -27,11 +27,13 @@ public class TunnelyClient {
 			return; // None of the Socket exceptions are recoverable.
 		}
 		
-		while(requstRoom().ID == 2);
+		while(requstRoom().ID == 2); // Prompts user for input and searches for a room.
+		
+		// new thread(() -> sendRawData());
 
 		// TODO: Send appropriate packet to middleman, interpret responses, start virtual server or prepare to make virtual connections.
 		// TODO: Accept/decline new users who attempt to join.
-		// readAny should be used for getting data from the TCP app and then sending to the middleman once it is in raw data mode.
+		// TODO: One thread for sending messages to middleman, one thread for reading messages, and one thread for accepting users.
 		
 		System.out.prinln("Middleman connection closed. Ending process.");
 	}
@@ -47,7 +49,7 @@ public class TunnelyClient {
 	public static Packet requestRoom() {
 		Scanner rqscn = new Scanner(System.in);
 		
-		System.out.print("Enter 'J' to join a room, other to create: ");
+		System.out.print("Enter \'J\' to join a room, other to create: ");
 		String rqtype = rmscn.nextLine();
 		System.out.print("Enter the room name: ");
 		String name = rmscn.nextLine();
@@ -75,5 +77,37 @@ public class TunnelyClient {
 		}
 		
 		return new ConnectionAcceptedPacket(bytes);
+	}
+	
+	public static void sendRawData() {
+		// readAny should be used for getting data from the TCP app and then sending to the middleman once it is in raw data mode.
+	}
+	
+	public static void processData() {
+		while(!middleman.isClosed()) {
+			
+			receivePacketBytes(middleman);
+			// Implement timeout for serviceJoinRequest.
+		}
+	}
+	
+	// Services incoming join requests via NewRoomMemberPacket.
+	// Room's join() method is synchronized meaning it orders multiple requests at once.
+	public static void serviceJoinRequest(NewRoomMemberPacket joinRq) {
+		Scanner rqscn = new Scanner(System.in);
+		System.out.prinln("User " + joinRq.getUserId() + " is attempting to join.");
+		System.out.print("Enter \'Y\' to accept, or provide a reason for rejection:");
+		String hostMessage = rqscn.nextLine();
+		
+		
+		try {
+			if(hostMessage.toUpper().equals("Y")) {
+				PacketHelper.sendPacket(middleman, new EvalMemberPacket(true, null));
+			} else {
+				PacketHelper.sendPacket(middleman, new EvalMemberPacket(false, hostMessage));
+			}
+		} catch(IOException e) {
+			System.out.println("Failed to send response.");
+		}
 	}
 }
