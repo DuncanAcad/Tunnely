@@ -47,9 +47,7 @@ public class VirtualServer {
                     outputStream.write(bytes);
                 }
             } catch (Exception e) {
-                if (isClosed()) return;
-                close();
-                e.printStackTrace();
+                close(e);
             }
         }, "virtual-server-local-relay").start();
 
@@ -65,16 +63,24 @@ public class VirtualServer {
                 outputStream.write(bytes);
             }
         } catch (Exception e) {
-            if (isClosed()) return;
-            close();
-            e.printStackTrace();
+            close(e);
         }
 
         close();
     }
 
-    private synchronized void close() {
-        closed = true;
+
+    public void close() {
+        close(null);
+    }
+
+    private synchronized void close(Exception e) {
+        if (isClosed()) return;
+        if (e != null) {
+            System.out.println("Closing due to exception:");
+            e.printStackTrace();
+        }
+        this.closed = true;
         SocketUtil.carelesslyClose(serverSocket);
     }
 

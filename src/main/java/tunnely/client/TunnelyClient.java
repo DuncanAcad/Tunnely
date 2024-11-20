@@ -116,6 +116,17 @@ public class TunnelyClient {
 
         // Room is now opened, turn into a room host
 
-        new RoomHost(middleman, appPort).run();
+        RoomHost roomHost = new RoomHost(middleman, appPort);
+        try {
+            System.out.println("Running room host");
+            roomHost.run();
+        } catch (Exception e) {
+            System.out.println("Error occurred while running room host");
+            e.printStackTrace();
+            SocketUtil.carelesslyClose(middleman);
+            roomHost.close();
+            return;
+        }
+        System.out.println("Room Host ended, shutting down...");
     }
 }

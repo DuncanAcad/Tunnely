@@ -9,6 +9,7 @@ import java.net.Socket;
 public class RoomHost {
     private final Socket middlemanServer;
     private final int appPort;
+    private boolean closed = false;
 
     public RoomHost(Socket middlemanServer, int appPort) {
         this.middlemanServer = middlemanServer;
@@ -16,19 +17,27 @@ public class RoomHost {
     }
 
     public void run() {
-
+        try {
+            receivePacketLoop();
+        } catch (Exception e) {
+            close(e);
+        }
     }
 
     // Processes incoming data, both in raw format and packet format.
-    public void processData() throws IOException {
+    public void receivePacketLoop() throws IOException {
         while (!middlemanServer.isClosed()) {
             byte[] bytes = PacketHelper.receivePacketBytes(middlemanServer);
+            if (bytes == null) {
+                System.out.println("Packet stream ended, closing...");
+                close();
+                return;
+            }
             switch (bytes[0]) {
                 case 2: // Close Connection.
                     CloseConnectionPacket close = new CloseConnectionPacket(bytes);
-                    System.out.println(close.getMessage());
-                    SocketUtil.carelesslyClose(middlemanServer);
-                    // TODO: close all connections to app server
+                    System.out.println("Room was closed, ending for reason: " + close.getMessage());
+                    close();
                     return; // Leave the data-processing loop.
 
                 case 3: // New Member joining.
@@ -55,6 +64,26 @@ public class RoomHost {
             PacketHelper.sendPacket(middlemanServer, new EvalMemberPacket(true, null));
         } catch (IOException e) {
             System.out.println("Failed to send response.");
+            close();
         }
+    }
+
+    public void close() {
+        close(null);
+    }
+
+    public synchronized void close(Exception e) {
+        if (isClosed()) return;
+        if (e != null) {
+            System.out.println("Closing due to exception:");
+            e.printStackTrace();
+        }
+        this.closed = true;
+        SocketUtil.carelesslyClose(middlemanServer);
+        // TODO: close all virtual connections
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 }
