@@ -5,6 +5,7 @@ import tunnely.util.SocketUtil;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -69,8 +70,9 @@ public class Room {
         try {
             PacketHelper.sendPacket(roomHostConnection, new NewRoomMemberPacket(newId));
         } catch (Exception e) {
-            this.closeRoom("Failed to communicate with room host.");
             SocketUtil.carelesslyClose(roomMember);
+            if (isClosed()) return;
+            this.closeRoom("Failed to communicate with room host.");
             return;
         }
 
@@ -128,21 +130,28 @@ public class Room {
             // inputStream -> raw packet to room host with id
             // raw packet from room host with id -> output stream
             byte[] bytes;
-            while (!this.isClosed() && (bytes = SocketUtil.readAny(roomMember.getInputStream(), 4096)) != null) {
+            while (!this.isClosed() && (bytes = SocketUtil.readAny(roomMember.getInputStream(), 1024)) != null) {
                 sendRawDataToRoomHost(userId, bytes);
             }
         } catch (Throwable t) {
+            SocketUtil.carelesslyClose(roomMember);
+            // Room closed
+            if (isClosed()) return;
+            // Closed externally
+            if (!roomMemberConnections.values().contains(roomMember)) return;
             // Goodbye this user!
-            removeMember(userId);
+            removeMember(userId, true);
         }
     }
 
-    private synchronized void removeMember(byte userId) {
+    private synchronized void removeMember(byte userId, boolean notifyHost) {
         Socket socket = roomMemberConnections.remove(userId);
         if (socket != null) SocketUtil.carelesslyClose(socket);
+        if (!notifyHost) return;
         try {
-            PacketHelper.sendPacket(roomHostConnection, new MemberLeftPacket(userId));
+            PacketHelper.sendPacket(roomHostConnection, new MemberDisconnectPacket(userId));
         } catch (Exception e) {
+            if (isClosed()) return;
             this.closeRoom("Failed to communicate with room host.");
         }
     }
@@ -152,6 +161,7 @@ public class Room {
     }
 
     private synchronized void closeRoom(String message) {
+        if (isClosed()) return;
         try {
             PacketHelper.sendPacket(roomHostConnection, new CloseConnectionPacket(message));
         } catch (Throwable ignored) {
@@ -175,6 +185,10 @@ public class Room {
         try {
             runHostReceiveLoop();
         } catch (Throwable t) {
+            if (t instanceof SocketException) {
+                closeRoom("Connection with room host has ended.");
+            }
+            if (isClosed()) return;
             System.out.println("Error during host receive loop.");
             t.printStackTrace();
         }
@@ -198,6 +212,10 @@ public class Room {
                     MemberRawDataPacket mrdp = new MemberRawDataPacket(bytes);
                     this.sendRawToMember(mrdp.getUserId(), mrdp.getData());
                     break;
+                case /*CloseMemberConnectionPacket.ID*/7:
+                    MemberDisconnectPacket cmcp = new MemberDisconnectPacket(bytes);
+                    removeMember(cmcp.getUserId(), false);
+                    break;
                 case /*EvalMemberPacket.ID*/4:
                     // To be processed by the thread expecting this
                     // Only one thread should be expecting this at a time, so only a single non-collection field is needed for storing this
@@ -211,12 +229,13 @@ public class Room {
     private void sendRawToMember(byte userId, byte[] data) {
         Socket memberConnection = this.roomMemberConnections.getOrDefault(userId, null);
         if (memberConnection == null) {
-            removeMember(userId);
+            removeMember(userId, true);
             return;
         }
         try {
             memberConnection.getOutputStream().write(data);
         } catch (Exception e) {
+            if (isClosed()) return;
             System.out.println("Failed to send data to member " + userId + " in room " + getName());
             e.printStackTrace();
             roomMemberConnections.remove(userId);

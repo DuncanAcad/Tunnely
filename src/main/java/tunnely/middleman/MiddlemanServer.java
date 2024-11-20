@@ -1,9 +1,6 @@
 package tunnely.middleman;
 
-import tunnely.packet.CloseConnectionPacket;
-import tunnely.packet.JoinRoomRequestPacket;
-import tunnely.packet.OpenRoomRequestPacket;
-import tunnely.packet.PacketHelper;
+import tunnely.packet.*;
 import tunnely.util.SocketUtil;
 
 import java.io.IOException;
@@ -111,6 +108,8 @@ public class MiddlemanServer {
             // No careless close here because we know the connection is going "normally", just a rejection for room name
             hostSocket.close();
             return;
+        } else {
+            PacketHelper.sendPacket(hostSocket, new ConnectionAcceptedPacket());
         }
         Room room = new Room(hostSocket, name, password);
         rooms.add(room);
@@ -146,7 +145,12 @@ public class MiddlemanServer {
 
     private static void checkClosedRooms() {
         synchronized (rooms) {
-            rooms.removeIf(Room::isClosed);
+            rooms.removeIf(room -> {
+                if (room.isClosed()) {
+                    System.out.println("Room " + room.getName() + " has been closed.");
+                }
+                return room.isClosed();
+            });
         }
     }
 }

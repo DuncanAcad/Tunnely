@@ -4,7 +4,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -84,6 +83,7 @@ public class SocketUtil {
     }
 
     public static void carelesslyClose(Closeable socket) {
+        if (socket == null) return;
         try {
             socket.close();
         } catch (Throwable ignored) {

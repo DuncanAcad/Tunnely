@@ -1,143 +1,121 @@
 package tunnely.client;
 
-import java.net.Socket;
 import tunnely.packet.*;
 import tunnely.util.SocketUtil;
+
+import java.net.Socket;
 import java.util.Scanner;
 
 public class TunnelyClient {
-	private static Socket middleman;
-	//private static String lastInput;
-	
-	public static void main(String[] args) {
-		System.out.println("Starting Tunnely Client...");
-		if(args.length >= 2) {
-			String mmIP = args[0]; // args are used to enter the middleman server IP/Port.
-			int mmPort = Integer.parseInt(args[1]);
-		} else {
-			System.out.println("IP Address and Port not provided, closing process.");
-			return;
-		}
-		
-		try { // Starts connection to middleman server.
-			startConnection(new Socket(InetAddress.getByName(mmIP), mmPort)); // Opens a connection to the middleman server.
-			System.out.println("Connected to Middleman Server.");
-		} catch(Exception e) {
-			System.out.println("Failed to connect to Middleman.");
-			e.printStackTrace();
-			return; // None of the Socket exceptions are recoverable.
-		}
-		
-		while(requestRoom().getId() == 2); // Prompts user for input and searches for a room.
-		
-		// new thread(() -> sendRawData()).start();
-		// processData();
-		
-		System.out.println("Middleman connection closed. Ending process.");
-	}
-	
-	// Sets the Socket connected to the middleman (cannot be changed after start).
-	public static void startConnection(Socket middleman) {
-		if(this.middleman == null) {
-			this.middleman = middleman;
-		}
-	}
-	
-	// Attempts to join a room. If no room by that name exists, attempts to create one.
-	public static Packet requestRoom() {
-		Scanner rqscn = new Scanner(System.in);
-		
-		System.out.print("Enter \'J\' to join a room, other to create: ");
-		String rqtype = rqscn.nextLine();
-		System.out.print("Enter the room name: ");
-		String name = rqscn.nextLine();
-		System.out.print("Enter the password: ");
-		String pass = rqscn.nextLine();
-		
-		try {
-			if(rqtype.toUpperCase().equals("J")) {
-				PacketHelper.sendPacket(middleman, new JoinRoomRequestPacket(name, pass));
-			} else {
-				PacketHelper.sendPacket(middleman, new OpenRoomRequestPacket(name, pass));
-			}
-		} catch(IOException e) {
-			System.out.println("Failed to send packet.");
-			return null; // null return indicates requestRoom was unsuccessful.
-		}
-		
-		// rqscn.close();
-		
-		byte[] bytes = PacketHelper.receivePacketBytes(middleman); // Listen for middleman response.
-		if(bytes[0] == 2) { // Connection was refused/closed.
-			CloseConnectionPacket fPacket = new CloseConnectionPacket(bytes);
-			System.out.println(fPacket.getMessage());
-			return null;
-		}
-		
-		return new ConnectionAcceptedPacket(bytes);
-	}
-	
-	public static void sendRawData() {
-		while(!middleman.isClosed()) {
-			// TODO: Send data from our TCP app to the middleman in raw data mode.
-			// readAny should be used for getting data from the TCP app and then sending to the middleman once it is in raw data mode
-			// middleman.getOutputStream().write( );
-		}
-	}
-	
-	// Processes incoming data, both in raw format and packet format.
-	public static void processData() {
-		while(!middleman.isClosed()) {
-			byte[] bytes = PacketHelper.receivePacketBytes(middleman);
-			switch(bytes[0]) {
-				case 2: // Close Connection.
-					CloseConnectionPacket close = new CloseConnectionPacket(bytes);
-					System.out.println(close.getMessage());
-					return; // Leave the data-processing loop.
-					
-				case 3: // New Member joining.
-					new Thread(() -> serviceJoinRequest(new NewRoomMemberPacket(bytes))).start(); // new thread to process a join request.
-					break;
-					
-				case 7: // Member Left.
-					MemberLeftPacket left = new MemberLeftPacket(bytes);
-					System.out.println("User " + left.getUserId() + " disconnected.");
-					break;
-					
-				default: // Raw data packet.
-					// TODO: Read in Raw Data Packets from Middleman.
-			}
-		}
-	}
-	
-	// Services incoming join requests via NewRoomMemberPacket.
-	// Room's join() method is synchronized meaning it orders multiple requests at once.
-	public static void serviceJoinRequest(NewRoomMemberPacket joinRq) {
-		System.out.println("User " + joinRq.getUserId() + " is attempting to join.");
-		System.out.print("Enter \'Y\' to accept, or provide a reason for rejection:");
-		String hostMessage = "N"; // "No" by default.
-		
-		hostMessage = new Scanner(System.in).nextLine();
-		// TODO: Add a timelimit for response using another thread.
-		// new thread(() -> inputRequest()).start();
-		// sleep(9000);
-		// Check thread return value somehow. Force close if still running.
-		
-		try {
-			if(hostMessage.toUpperCase().equals("Y")) {
-				PacketHelper.sendPacket(middleman, new EvalMemberPacket(true, null));
-			} else {
-				PacketHelper.sendPacket(middleman, new EvalMemberPacket(false, hostMessage));
-			}
-		} catch(IOException e) {
-			System.out.println("Failed to send response.");
-		}
-	}
-	
-	/* Thread for scanning user inputs. Designed to be interrupted after a given timeslice.
-	public static synchronized void inputRequest() {
-		Scanner rqscn = new Scanner(System.in);
-		lastInput = rqscn.nextLine();
-	}
-	*/
+    public static void main(String[] args) {
+        System.out.println("Starting Tunnely Client...");
+
+        if (args.length < 2) {
+            System.out.println("IP Address and Port not provided, closing process.");
+            return;
+        }
+
+        String mmIP = args[0];
+        int mmPort = Integer.parseInt(args[1]);
+
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("Enter 'J' to join a room, other to create: ");
+        boolean isJoining = scanner.nextLine().trim().equals("J");
+        System.out.print("Enter the room name: ");
+        String name = scanner.nextLine().trim();
+        System.out.print("Enter the password: ");
+        String pass = scanner.nextLine().trim();
+        System.out.println("Enter the local app port:"); // Port of the app server for room host, or the port to host the virtual server for room joiners, does not need to match on clients.
+        int appPort = scanner.nextInt();
+
+        final Socket middleman;
+        try { // Starts connection to middleman server.
+            // Opens a connection to the middleman server.
+            System.out.println("Connecting to Middleman Server...");
+            middleman = new Socket(mmIP, mmPort);
+            System.out.println("Connected to Middleman Server.");
+        } catch (Exception e) {
+            System.out.println("Failed to connect to Middleman.");
+            e.printStackTrace();
+            return; // None of the Socket exceptions are recoverable.
+        }
+
+        if (isJoining) {
+            joinRoom(middleman, name, pass, appPort);
+        } else {
+            createRoom(middleman, name, pass, appPort);
+        }
+
+        System.out.println("Middleman connection closed. Ending process.");
+    }
+
+    private static void joinRoom(Socket middleman, String name, String pass, int appPort) {
+        try {
+            PacketHelper.sendPacket(middleman, new JoinRoomRequestPacket(name, pass));
+            byte[] bytes = PacketHelper.receivePacketBytes(middleman);
+            if (bytes == null) {
+                // Socket was closed
+                System.out.println("Middleman connection was ended mid request.");
+                SocketUtil.carelesslyClose(middleman);
+                return;
+            }
+            if (bytes[0] == CloseConnectionPacket.ID) {
+                CloseConnectionPacket ccp = new CloseConnectionPacket(bytes);
+                System.out.println("Join request rejected! " + ccp.getMessage());
+                SocketUtil.carelesslyClose(middleman);
+                return;
+            }
+            new ConnectionAcceptedPacket(bytes);
+            System.out.println("Connection successful!");
+        } catch (Exception e) {
+            System.out.println("Failed to communicate with Middleman!");
+            e.printStackTrace();
+            SocketUtil.carelesslyClose(middleman);
+            return;
+        }
+        // Room is now joined, at this point we turn the connection into a virtual server.
+
+        try {
+            System.out.println("Running virtual server on port " + appPort + " (connect to `localhost:" + appPort + ")`.");
+            new VirtualServer(middleman, appPort).run();
+        } catch (Exception e) {
+            System.out.println("Error occurred while running virtual server");
+            e.printStackTrace();
+            SocketUtil.carelesslyClose(middleman);
+            return;
+        }
+        System.out.println("Virtual server ended, shutting down...");
+        SocketUtil.carelesslyClose(middleman);
+    }
+
+    private static void createRoom(Socket middleman, String name, String pass, int appPort) {
+        try {
+            PacketHelper.sendPacket(middleman, new OpenRoomRequestPacket(name, pass));
+            byte[] bytes = PacketHelper.receivePacketBytes(middleman);
+            if (bytes == null) {
+                // Socket was closed
+                System.out.println("Middleman connection was ended mid request.");
+                SocketUtil.carelesslyClose(middleman);
+                return;
+            }
+            if (bytes[0] == CloseConnectionPacket.ID) {
+                CloseConnectionPacket ccp = new CloseConnectionPacket(bytes);
+                System.out.println("Join request rejected! " + ccp.getMessage());
+                SocketUtil.carelesslyClose(middleman);
+                return;
+            }
+            new ConnectionAcceptedPacket(bytes);
+            System.out.println("Connection successful!");
+        } catch (Exception e) {
+            System.out.println("Failed to communicate with Middleman!");
+            e.printStackTrace();
+            SocketUtil.carelesslyClose(middleman);
+            return;
+        }
+
+        // Room is now opened, turn into a room host
+
+        new RoomHost(middleman, appPort).run();
+    }
 }

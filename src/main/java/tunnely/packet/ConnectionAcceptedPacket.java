@@ -14,7 +14,7 @@ public class ConnectionAcceptedPacket implements Packet {
 
     @Override
     public byte[] toBytes() {
-        return new byte[]{0};
+        return new byte[]{ID};
     }
 
     @Override
