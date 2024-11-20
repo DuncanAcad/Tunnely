@@ -28,16 +28,16 @@ public class TunnelyClient {
 			return; // None of the Socket exceptions are recoverable.
 		}
 		
-		while(requstRoom().getId() == 2); // Prompts user for input and searches for a room.
+		while(requestRoom().getId() == 2); // Prompts user for input and searches for a room.
 		
 		// new thread(() -> sendRawData()).start();
 		// processData();
 		
-		System.out.prinln("Middleman connection closed. Ending process.");
+		System.out.println("Middleman connection closed. Ending process.");
 	}
 	
 	// Sets the Socket connected to the middleman (cannot be changed after start).
-	public static startConnection(Socket middleman) {
+	public static void startConnection(Socket middleman) {
 		if(this.middleman == null) {
 			this.middleman = middleman;
 		}
@@ -48,11 +48,11 @@ public class TunnelyClient {
 		Scanner rqscn = new Scanner(System.in);
 		
 		System.out.print("Enter \'J\' to join a room, other to create: ");
-		String rqtype = rmscn.nextLine();
+		String rqtype = rqscn.nextLine();
 		System.out.print("Enter the room name: ");
-		String name = rmscn.nextLine();
+		String name = rqscn.nextLine();
 		System.out.print("Enter the password: ");
-		String pass = rmscn.nextLine();
+		String pass = rqscn.nextLine();
 		
 		try {
 			if(rqtype.toUpperCase().equals("J")) {
@@ -96,7 +96,7 @@ public class TunnelyClient {
 					return; // Leave the data-processing loop.
 					
 				case 3: // New Member joining.
-					new thread(() -> serviceJoinRequest(new NewRoomMemberPacket(bytes))).start(); // new thread to process a join request.
+					new Thread(() -> serviceJoinRequest(new NewRoomMemberPacket(bytes))).start(); // new thread to process a join request.
 					break;
 					
 				case 7: // Member Left.
@@ -113,7 +113,7 @@ public class TunnelyClient {
 	// Services incoming join requests via NewRoomMemberPacket.
 	// Room's join() method is synchronized meaning it orders multiple requests at once.
 	public static void serviceJoinRequest(NewRoomMemberPacket joinRq) {
-		System.out.prinln("User " + joinRq.getUserId() + " is attempting to join.");
+		System.out.println("User " + joinRq.getUserId() + " is attempting to join.");
 		System.out.print("Enter \'Y\' to accept, or provide a reason for rejection:");
 		String hostMessage = "N"; // "No" by default.
 		
@@ -124,7 +124,7 @@ public class TunnelyClient {
 		// Check thread return value somehow. Force close if still running.
 		
 		try {
-			if(hostMessage.toUpper().equals("Y")) {
+			if(hostMessage.toUpperCase().equals("Y")) {
 				PacketHelper.sendPacket(middleman, new EvalMemberPacket(true, null));
 			} else {
 				PacketHelper.sendPacket(middleman, new EvalMemberPacket(false, hostMessage));

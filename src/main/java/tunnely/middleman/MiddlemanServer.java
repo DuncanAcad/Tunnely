@@ -25,6 +25,9 @@ public class MiddlemanServer {
         do {
             System.out.println("Enter a desired port for use: ");
             portNum = new Scanner(System.in).nextInt();
+            if(!SocketUtil.isPortFree(portNum)){
+                System.out.println("Port currently in use. Select other.");
+            }
         } while (!SocketUtil.isPortFree(portNum));
 
         final ServerSocket serverSocket;
