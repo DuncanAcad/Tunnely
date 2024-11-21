@@ -5,22 +5,26 @@ import tunnely.util.SocketUtil;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RoomHost {
     private final Socket middlemanServer;
     private final int appPort;
     private boolean closed = false;
+    private final Map<Byte, Socket> virtualConnections;
 
     public RoomHost(Socket middlemanServer, int appPort) {
         this.middlemanServer = middlemanServer;
         this.appPort = appPort;
+        this.virtualConnections = new ConcurrentHashMap<>();
     }
 
     public void run() {
         try {
             receivePacketLoop();
         } catch (Exception e) {
-            close(e);
+            close(e, "Error while running room host!");
         }
     }
 
@@ -29,58 +33,126 @@ public class RoomHost {
         while (!middlemanServer.isClosed()) {
             byte[] bytes = PacketHelper.receivePacketBytes(middlemanServer);
             if (bytes == null) {
-                System.out.println("Packet stream ended, closing...");
-                close();
+                close(null, "Packet stream ended, closing...");
                 return;
             }
             switch (bytes[0]) {
                 case 2: // Close Connection.
                     CloseConnectionPacket close = new CloseConnectionPacket(bytes);
-                    System.out.println("Room was closed, ending for reason: " + close.getMessage());
-                    close();
+                    close(null, "Room was closed, ending for reason: " + close.getMessage());
                     return; // Leave the data-processing loop.
 
                 case 3: // New Member joining.
-                    new Thread(() -> serviceJoinRequest(new NewRoomMemberPacket(bytes))).start(); // new thread to process a join request.
+                    serviceJoinRequest(new NewRoomMemberPacket(bytes));
                     break;
 
                 case 7: // Member Left.
-                    MemberDisconnectPacket left = new MemberDisconnectPacket(bytes);
-                    System.out.println("User " + left.getUserId() + " disconnected.");
+                    MemberDisconnectPacket mdp = new MemberDisconnectPacket(bytes);
+                    System.out.println("User " + mdp.getUserId() + " disconnected.");
+                    removeMember(mdp.getUserId(), false);
                     break;
 
-                default: // Raw data packet.
-                    // TODO: Read in Raw Data Packets from Middleman.
+                case 6: // Raw data packet.
+                    MemberRawDataPacket mrdp = new MemberRawDataPacket(bytes);
+                    handleRawData(mrdp.getUserId(), mrdp.getData());
+                default:
+                    close(null, "Invalid packet ID (" + bytes[0] + ")!");
             }
         }
     }
 
-    // Services incoming join requests via NewRoomMemberPacket.
-    // Room's join() method is synchronized meaning it orders multiple requests at once.
-    public void serviceJoinRequest(NewRoomMemberPacket joinRq) {
-        System.out.println("User " + joinRq.getUserId() + " is attempting to join.");
-
+    private void handleRawData(byte userId, byte[] data) {
+        Socket socket = virtualConnections.getOrDefault(userId, null);
+        if (socket == null) {
+            removeMember(userId, true);
+            return;
+        }
         try {
-            PacketHelper.sendPacket(middlemanServer, new EvalMemberPacket(true, null));
-        } catch (IOException e) {
-            System.out.println("Failed to send response.");
-            close();
+            socket.getOutputStream().write(data);
+        } catch (Exception e) {
+            removeMember(userId, true);
         }
     }
 
-    public void close() {
-        close(null);
+    private void removeMember(byte userId, boolean notifyMM) {
+        Socket socket = virtualConnections.remove(userId);
+        if (socket != null) SocketUtil.carelesslyClose(socket);
+        if (!notifyMM) return;
+        trySendToMiddleman(new MemberDisconnectPacket(userId));
     }
 
-    public synchronized void close(Exception e) {
+    // Services incoming join requests via NewRoomMemberPacket.
+    // Room's join() method is synchronized meaning it orders multiple requests at once.
+    public void serviceJoinRequest(NewRoomMemberPacket nrmp) {
+        byte userId = nrmp.getUserId();
+        if (virtualUserExists(userId)) {
+            close(null, "");
+        }
+        System.out.println("Creating new virtual connection...");
+        Socket socket = tryCreateVirtualConnection();
+        System.out.println("Connection created for user " + userId);
+        if (socket == null) {
+            trySendToMiddleman(new EvalMemberPacket(false, null));
+            return;
+        }
+        virtualConnections.put(userId, socket);
+        if (!trySendToMiddleman(new EvalMemberPacket(true, null))) return;
+        System.out.println("User " + userId + " has joined");
+        new Thread(() -> openVirtualConnectionReceiver(userId, socket));
+    }
+
+    private void openVirtualConnectionReceiver(byte userId, Socket socket) {
+        try {
+            while (true) {
+                byte[] bytes;
+                while (!this.isClosed() && (bytes = SocketUtil.readAny(socket.getInputStream(), 1024)) != null) {
+                    if (!trySendToMiddleman(new MemberRawDataPacket(bytes))) return;
+                }
+            }
+        } catch (Exception e) {
+            if (!virtualUserExists(userId)) {
+                SocketUtil.carelesslyClose(socket);
+                return;
+            }
+            removeMember(userId, true);
+        }
+    }
+
+    private boolean virtualUserExists(byte userId) {
+        return virtualConnections.containsKey(userId);
+    }
+
+    /**
+     * Creates and returns a socket connecting to localhost:appPort or null if connection fails.
+     */
+    private Socket tryCreateVirtualConnection() {
+        try {
+            return new Socket("localhost", appPort);
+        } catch (Exception e) {
+            System.out.println("Failed to create virtual connection! App server might not be open...");
+            return null;
+        }
+    }
+
+    private synchronized boolean trySendToMiddleman(Packet packet) {
+        try {
+            PacketHelper.sendPacket(middlemanServer, packet);
+            return true;
+        } catch (IOException e) {
+            close(e, "Failed to send packet to middleman (" + packet + "):");
+        }
+        return false;
+    }
+
+    public synchronized void close(Exception e, String message) {
         if (isClosed()) return;
         if (e != null) {
-            System.out.println("Closing due to exception:");
+            System.out.println(message == null ? "Closing due to exception:" : message);
             e.printStackTrace();
         }
         this.closed = true;
         SocketUtil.carelesslyClose(middlemanServer);
-        // TODO: close all virtual connections
+        virtualConnections.forEach((aByte, socket) -> SocketUtil.carelesslyClose(middlemanServer));
     }
 
     public boolean isClosed() {

@@ -26,6 +26,8 @@ public final class PacketHelper {
         InputStream inputStream = socket.getInputStream();
         byte[] bytes = SocketUtil.readSpecific(inputStream, 4);
         if (bytes == null) return null;
-        return SocketUtil.readSpecific(inputStream, SocketUtil.bytesToInt(bytes));
+        int length = SocketUtil.bytesToInt(bytes);
+        if (length == 0) return null;
+        return SocketUtil.readSpecific(inputStream, length);
     }
 }
