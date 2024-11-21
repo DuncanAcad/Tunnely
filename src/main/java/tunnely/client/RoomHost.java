@@ -5,6 +5,8 @@ import tunnely.util.SocketUtil;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -13,6 +15,8 @@ public class RoomHost {
     private final int appPort;
     private boolean closed = false;
     private final Map<Byte, Socket> virtualConnections;
+
+    private final List<Byte> usersReadyForConnection = new ArrayList<>();
 
     public RoomHost(Socket middlemanServer, int appPort) {
         this.middlemanServer = middlemanServer;
@@ -23,7 +27,9 @@ public class RoomHost {
     public void run() {
         try {
             receivePacketLoop();
+            System.out.println("Middleman receiver ended as loop has ended.");
         } catch (Exception e) {
+            System.out.println("Middleman receiver ended due to exception.");
             close(e, "Error while running room host!");
         }
     }
@@ -50,7 +56,7 @@ public class RoomHost {
                 case 7: // Member Left.
                     MemberDisconnectPacket mdp = new MemberDisconnectPacket(bytes);
                     System.out.println("User " + mdp.getUserId() + " disconnected.");
-                    removeMember(mdp.getUserId(), false);
+                    removeMember(mdp.getUserId(), null, false);
                     break;
 
                 case 6: // Raw data packet.
@@ -63,22 +69,42 @@ public class RoomHost {
     }
 
     private void handleRawData(byte userId, byte[] data) {
-        Socket socket = virtualConnections.getOrDefault(userId, null);
+        Socket socket = getVirtualConnection(userId);
+        if (socket == null && usersReadyForConnection.contains(userId)) {
+            usersReadyForConnection.remove(new Byte(userId)); // new Byte(...) to force it to remove an object, not an index.
+            System.out.println("Data received for user " + userId + ", opening virtual connection");
+            socket = tryCreateVirtualConnection();
+            if (socket == null) {
+                System.out.println("Failed to open virtual connection, removing user.");
+                removeMember(userId, null, true);
+                return;
+            }
+            virtualConnections.put(userId, socket);
+            Socket finalSocket = socket;
+            new Thread(() -> openVirtualConnectionReceiver(userId, finalSocket));
+        }
         if (socket == null) {
-            removeMember(userId, true);
+            System.out.println("Received packets for a user that does not exist! (" + userId + ")");
+            removeMember(userId, null, true);
             return;
         }
         try {
             socket.getOutputStream().write(data);
         } catch (Exception e) {
+            System.out.println("Error while writing data to virtual connection for user " + userId);
             if (virtualUserExists(userId))
                 System.out.println("Error sending data to " + userId + ", removing user...");
-            removeMember(userId, true);
+            removeMember(userId, socket, true);
         }
     }
 
-    private void removeMember(byte userId, boolean notifyMM) {
-        Socket socket = virtualConnections.remove(userId);
+    private Socket getVirtualConnection(byte userId) {
+        return virtualConnections.get(userId);
+    }
+
+    private void removeMember(byte userId, Socket specificConnection, boolean notifyMM) {
+        if (specificConnection != null) virtualConnections.remove(userId, specificConnection);
+        Socket socket = specificConnection == null ? virtualConnections.remove(userId) : specificConnection;
         if (socket != null) SocketUtil.carelesslyClose(socket);
         if (!notifyMM) return;
         trySendToMiddleman(new MemberDisconnectPacket(userId));
@@ -89,19 +115,14 @@ public class RoomHost {
     public void serviceJoinRequest(NewRoomMemberPacket nrmp) {
         byte userId = nrmp.getUserId();
         if (virtualUserExists(userId)) {
-            close(null, "");
-        }
-        System.out.println("Creating new virtual connection...");
-        Socket socket = tryCreateVirtualConnection();
-        if (socket == null) {
-            trySendToMiddleman(new EvalMemberPacket(false, ""));
+            System.out.println("Closing room as middleman added a new user that already exists!");
+            close(null, "User already exists");
             return;
         }
-        System.out.println("Connection created for user " + userId);
-        virtualConnections.put(userId, socket);
+        usersReadyForConnection.add(userId);
+        System.out.println("Connection ready for user " + userId);
         if (!trySendToMiddleman(new EvalMemberPacket(true, ""))) return;
         System.out.println("User " + userId + " has successfuly joined");
-        new Thread(() -> openVirtualConnectionReceiver(userId, socket));
     }
 
     private void openVirtualConnectionReceiver(byte userId, Socket socket) {
@@ -114,11 +135,12 @@ public class RoomHost {
                 }
             }
         } catch (Exception e) {
+            System.out.println("Virtual connection receiver for " + userId + " ending.");
             if (!virtualUserExists(userId)) {
                 SocketUtil.carelesslyClose(socket);
                 return;
             }
-            removeMember(userId, true);
+            removeMember(userId, null, true);
         }
     }
 
