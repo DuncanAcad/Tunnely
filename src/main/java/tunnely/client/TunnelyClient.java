@@ -4,6 +4,7 @@ import tunnely.packet.*;
 import tunnely.util.SocketUtil;
 
 import java.net.Socket;
+import java.util.Locale;
 import java.util.Scanner;
 
 public class TunnelyClient {
@@ -21,13 +22,13 @@ public class TunnelyClient {
         Scanner scanner = new Scanner(System.in);
 
         System.out.print("Enter 'J' to join a room, other to create: ");
-        boolean isJoining = scanner.nextLine().trim().equals("J");
+        boolean isJoining = (args.length >= 3 ? args[2] : scanner.nextLine()).trim().toUpperCase(Locale.ROOT).equals("J");
         System.out.print("Enter the room name: ");
-        String name = scanner.nextLine().trim();
+        String name = (args.length >= 4 ? args[3] : scanner.nextLine()).trim();
         System.out.print("Enter the password: ");
-        String pass = scanner.nextLine().trim();
+        String pass = (args.length >= 5 ? args[4] : scanner.nextLine()).trim();
         System.out.println("Enter the local app port:"); // Port of the app server for room host, or the port to host the virtual server for room joiners, does not need to match on clients.
-        int appPort = scanner.nextInt();
+        int appPort = args.length >= 6 ? Integer.parseInt(args[5]) : scanner.nextInt();
 
         final Socket middleman;
         try { // Starts connection to middleman server.
@@ -46,8 +47,6 @@ public class TunnelyClient {
         } else {
             createRoom(middleman, name, pass, appPort);
         }
-
-        System.out.println("Middleman connection closed. Ending process.");
     }
 
     private static void joinRoom(Socket middleman, String name, String pass, int appPort) {
@@ -76,17 +75,19 @@ public class TunnelyClient {
         }
         // Room is now joined, at this point we turn the connection into a virtual server.
 
+        VirtualServer virtualServer = new VirtualServer(middleman, appPort);
         try {
             System.out.println("Running virtual server on port " + appPort + " (connect to `localhost:" + appPort + ")`.");
-            new VirtualServer(middleman, appPort).run();
+            virtualServer.run();
         } catch (Exception e) {
-            System.out.println("Error occurred while running virtual server");
-            e.printStackTrace();
-            SocketUtil.carelesslyClose(middleman);
+            if (!virtualServer.isClosed()) {
+                System.out.println("Error occurred while running virtual server");
+                virtualServer.close(e);
+            }
             return;
         }
+        virtualServer.close();
         System.out.println("Virtual server ended, shutting down...");
-        SocketUtil.carelesslyClose(middleman);
     }
 
     private static void createRoom(Socket middleman, String name, String pass, int appPort) {

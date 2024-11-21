@@ -15,7 +15,7 @@ public class VirtualServer {
     private boolean closed = false;
     private final Socket relay;
     private final int port;
-    private ServerSocket serverSocket = null;
+    private Socket client = null;
 
     public VirtualServer(Socket relaySocket, int port) {
         this.relay = relaySocket;
@@ -23,11 +23,12 @@ public class VirtualServer {
     }
 
     public void run() throws IOException {
-        final Socket client;
+        final ServerSocket serverSocket;
         try {
-            serverSocket = new ServerSocket(port);
             // Listen for the one and only connection
+            serverSocket = new ServerSocket(port);
             client = serverSocket.accept();
+            serverSocket.close();
         } catch (IOException e) {
             throw new IOException("Failed to start virtual server", e);
         }
@@ -40,10 +41,12 @@ public class VirtualServer {
                 OutputStream outputStream = relay.getOutputStream();
                 while (!isClosed()) {
                     byte[] bytes = SocketUtil.readAny(inputStream, 1024);
-                    if (bytes == null){
+                    if (bytes == null) {
                         if (isClosed()) return;
                         close();
+                        return;
                     }
+                    System.out.println("Redirecting bytes from client to relay: " + SocketUtil.bytesToHexString(bytes));
                     outputStream.write(bytes);
                 }
             } catch (Exception e) {
@@ -56,10 +59,12 @@ public class VirtualServer {
             OutputStream outputStream = client.getOutputStream();
             while (!isClosed()) {
                 byte[] bytes = SocketUtil.readAny(inputStream, 1024);
-                if (bytes == null){
+                if (bytes == null) {
                     if (isClosed()) return;
                     close();
+                    return;
                 }
+                System.out.println("Redirecting bytes from relay to client: " + SocketUtil.bytesToHexString(bytes));
                 outputStream.write(bytes);
             }
         } catch (Exception e) {
@@ -74,14 +79,15 @@ public class VirtualServer {
         close(null);
     }
 
-    private synchronized void close(Exception e) {
+    public synchronized void close(Exception e) {
         if (isClosed()) return;
         if (e != null) {
             System.out.println("Closing due to exception:");
             e.printStackTrace();
         }
         this.closed = true;
-        SocketUtil.carelesslyClose(serverSocket);
+        SocketUtil.carelesslyClose(relay);
+        SocketUtil.carelesslyClose(client);
     }
 
     public boolean isClosed() {

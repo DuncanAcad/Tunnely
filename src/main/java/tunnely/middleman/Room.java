@@ -131,7 +131,14 @@ public class Room {
             // raw packet from room host with id -> output stream
             byte[] bytes;
             while (!this.isClosed() && (bytes = SocketUtil.readAny(roomMember.getInputStream(), 1024)) != null) {
-                sendRawDataToRoomHost(userId, bytes);
+                try {
+                    sendRawDataToRoomHost(userId, bytes);
+                } catch (Throwable t) {
+                    System.out.println("Failed to send raw data to room host:");
+                    t.printStackTrace();
+                    this.closeRoom("Failed to send raw data to room host.");
+                    return;
+                }
             }
         } catch (Throwable t) {
             SocketUtil.carelesslyClose(roomMember);
@@ -162,6 +169,7 @@ public class Room {
 
     private synchronized void closeRoom(String message) {
         if (isClosed()) return;
+        System.out.println("Closing room " + name + " for reason: " + message);
         try {
             PacketHelper.sendPacket(roomHostConnection, new CloseConnectionPacket(message));
         } catch (Throwable ignored) {

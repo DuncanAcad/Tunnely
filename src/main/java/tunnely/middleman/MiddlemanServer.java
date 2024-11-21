@@ -19,16 +19,23 @@ public class MiddlemanServer {
         // Used System.in instead of Args in case of port already being in use, it will be easier
         // to check the exception in this case, if exception found, enter new port number
         int portNum;
-        boolean portFree;
-        do {
-            System.out.println("Enter a desired port for use: ");
-            portNum = new Scanner(System.in).nextInt();
-            portFree = SocketUtil.isPortFree(portNum);
-            if (!portFree) {
-                System.out.println("Port currently in use. Select other.");
+        if (args.length >= 1) {
+            portNum = Integer.parseInt(args[0]);
+            if (!SocketUtil.isPortFree(portNum)) {
+                System.out.println("Port currently in use, exiting...");
+                return;
             }
-        } while (!portFree);
-
+        } else {
+            boolean portFree;
+            do {
+                System.out.println("Enter a desired port for use: ");
+                portNum = new Scanner(System.in).nextInt();
+                portFree = SocketUtil.isPortFree(portNum);
+                if (!portFree) {
+                    System.out.println("Port currently in use. Select other.");
+                }
+            } while (!portFree);
+        }
         final ServerSocket serverSocket;
         try {
             serverSocket = new ServerSocket(portNum);

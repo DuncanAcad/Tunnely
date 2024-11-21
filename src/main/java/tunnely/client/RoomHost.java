@@ -36,6 +36,7 @@ public class RoomHost {
                 close(null, "Packet stream ended, closing...");
                 return;
             }
+            System.out.println("Data received from middleman: " + SocketUtil.bytesToHexString(bytes)); // Todo: comment out
             switch (bytes[0]) {
                 case 2: // Close Connection.
                     CloseConnectionPacket close = new CloseConnectionPacket(bytes);
@@ -70,6 +71,8 @@ public class RoomHost {
         try {
             socket.getOutputStream().write(data);
         } catch (Exception e) {
+            if (virtualUserExists(userId))
+                System.out.println("Error sending data to " + userId + ", removing user...");
             removeMember(userId, true);
         }
     }
@@ -90,14 +93,14 @@ public class RoomHost {
         }
         System.out.println("Creating new virtual connection...");
         Socket socket = tryCreateVirtualConnection();
-        System.out.println("Connection created for user " + userId);
         if (socket == null) {
-            trySendToMiddleman(new EvalMemberPacket(false, null));
+            trySendToMiddleman(new EvalMemberPacket(false, ""));
             return;
         }
+        System.out.println("Connection created for user " + userId);
         virtualConnections.put(userId, socket);
-        if (!trySendToMiddleman(new EvalMemberPacket(true, null))) return;
-        System.out.println("User " + userId + " has joined");
+        if (!trySendToMiddleman(new EvalMemberPacket(true, ""))) return;
+        System.out.println("User " + userId + " has successfuly joined");
         new Thread(() -> openVirtualConnectionReceiver(userId, socket));
     }
 
@@ -106,7 +109,8 @@ public class RoomHost {
             while (true) {
                 byte[] bytes;
                 while (!this.isClosed() && (bytes = SocketUtil.readAny(socket.getInputStream(), 1024)) != null) {
-                    if (!trySendToMiddleman(new MemberRawDataPacket(bytes))) return;
+                    System.out.println("Data received from " + userId + ": " + SocketUtil.bytesToHexString(bytes));
+                    if (!trySendToMiddleman(new MemberRawDataPacket(userId, bytes))) return;
                 }
             }
         } catch (Exception e) {
