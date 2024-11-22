@@ -62,6 +62,7 @@ public class RoomHost {
                 case 6: // Raw data packet.
                     MemberRawDataPacket mrdp = new MemberRawDataPacket(bytes);
                     handleRawData(mrdp.getUserId(), mrdp.getData());
+                    break;
                 default:
                     close(null, "Invalid packet ID (" + bytes[0] + ")!");
             }
