@@ -65,6 +65,7 @@ public class RoomHost {
                     break;
                 default:
                     close(null, "Invalid packet ID (" + bytes[0] + ")!");
+                    return;
             }
         }
     }
@@ -90,7 +91,9 @@ public class RoomHost {
             return;
         }
         try {
+            System.out.println("Writing bytes to user " + userId + ": " + SocketUtil.bytesToHexString(data)); // TODO: comment out
             socket.getOutputStream().write(data);
+            System.out.println("Done writing bytes to user " + userId + "."); // TODO: comment out
         } catch (Exception e) {
             System.out.println("Error while writing data to virtual connection for user " + userId);
             if (virtualUserExists(userId))

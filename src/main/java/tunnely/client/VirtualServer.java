@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 
 /**
  * A virtual server that accepts a single connection and relays the connection to another server.
@@ -59,6 +60,7 @@ public class VirtualServer {
             OutputStream outputStream = client.getOutputStream();
             while (!isClosed()) {
                 byte[] bytes = SocketUtil.readAny(inputStream, 1024);
+                System.out.println("Ding! "+ Arrays.toString(bytes)); // TODO: comment out
                 if (bytes == null) {
                     if (isClosed()) return;
                     close();
