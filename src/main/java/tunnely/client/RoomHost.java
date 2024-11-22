@@ -82,7 +82,7 @@ public class RoomHost {
             }
             virtualConnections.put(userId, socket);
             Socket finalSocket = socket;
-            new Thread(() -> openVirtualConnectionReceiver(userId, finalSocket));
+            new Thread(() -> openVirtualConnectionReceiver(userId, finalSocket)).start();
         }
         if (socket == null) {
             System.out.println("Received packets for a user that does not exist! (" + userId + ")");
