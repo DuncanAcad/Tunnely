@@ -145,7 +145,7 @@ public class Room {
             // Room closed
             if (isClosed()) return;
             // Closed externally
-            if (!roomMemberConnections.values().contains(roomMember)) return;
+            if (!roomMemberConnections.containsValue(roomMember)) return;
             // Goodbye this user!
             removeMember(userId, true);
         }
