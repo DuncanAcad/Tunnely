@@ -42,7 +42,7 @@ public class RoomHost {
                 close(null, "Packet stream ended, closing...");
                 return;
             }
-            System.out.println("Data received from middleman: " + SocketUtil.bytesToHexString(bytes)); // Todo: comment out
+//            System.out.println("Data received from middleman: " + SocketUtil.bytesToHexString(bytes));
             switch (bytes[0]) {
                 case 2: // Close Connection.
                     CloseConnectionPacket close = new CloseConnectionPacket(bytes);
@@ -91,9 +91,9 @@ public class RoomHost {
             return;
         }
         try {
-            System.out.println("Writing bytes to user " + userId + ": " + SocketUtil.bytesToHexString(data)); // TODO: comment out
+//            System.out.println("Writing bytes to user " + userId + ": " + SocketUtil.bytesToHexString(data));
             socket.getOutputStream().write(data);
-            System.out.println("Done writing bytes to user " + userId + "."); // TODO: comment out
+//            System.out.println("Done writing bytes to user " + userId + ".");
         } catch (Exception e) {
             System.out.println("Error while writing data to virtual connection for user " + userId);
             if (virtualUserExists(userId))

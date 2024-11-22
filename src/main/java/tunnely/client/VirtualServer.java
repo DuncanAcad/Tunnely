@@ -47,7 +47,7 @@ public class VirtualServer {
                         close();
                         return;
                     }
-                    System.out.println("Redirecting bytes from client to relay: " + SocketUtil.bytesToHexString(bytes));
+//                    System.out.println("Redirecting bytes from client to relay: " + SocketUtil.bytesToHexString(bytes));
                     outputStream.write(bytes);
                 }
             } catch (Exception e) {
@@ -60,13 +60,13 @@ public class VirtualServer {
             OutputStream outputStream = client.getOutputStream();
             while (!isClosed()) {
                 byte[] bytes = SocketUtil.readAny(inputStream, 1024);
-                System.out.println("Ding! "+ Arrays.toString(bytes)); // TODO: comment out
+//                System.out.println("Ding! "+ Arrays.toString(bytes));
                 if (bytes == null) {
                     if (isClosed()) return;
                     close();
                     return;
                 }
-                System.out.println("Redirecting bytes from relay to client: " + SocketUtil.bytesToHexString(bytes));
+//                System.out.println("Redirecting bytes from relay to client: " + SocketUtil.bytesToHexString(bytes));
                 outputStream.write(bytes);
             }
         } catch (Exception e) {
