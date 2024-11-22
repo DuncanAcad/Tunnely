@@ -71,7 +71,7 @@ public class RoomHost {
     private void handleRawData(byte userId, byte[] data) {
         Socket socket = getVirtualConnection(userId);
         if (socket == null && usersReadyForConnection.contains(userId)) {
-            usersReadyForConnection.remove(new Byte(userId)); // new Byte(...) to force it to remove an object, not an index.
+            usersReadyForConnection.remove(Byte.valueOf(userId)); // new Byte(...) to force it to remove an object, not an index.
             System.out.println("Data received for user " + userId + ", opening virtual connection");
             socket = tryCreateVirtualConnection();
             if (socket == null) {
