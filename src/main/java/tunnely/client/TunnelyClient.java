@@ -30,6 +30,10 @@ public class TunnelyClient {
         System.out.println("Enter the local app port:"); // Port of the app server for room host, or the port to host the virtual server for room joiners, does not need to match on clients.
         int appPort = args.length >= 6 ? Integer.parseInt(args[5]) : scanner.nextInt();
 
+        runTunnelyClient(mmIP, mmPort, isJoining, name, pass, appPort);
+    }
+
+    public static void runTunnelyClient(String mmIP, int mmPort, boolean isJoining, String name, String pass, int appPort) {
         final Socket middleman;
         try { // Starts connection to middleman server.
             // Opens a connection to the middleman server.

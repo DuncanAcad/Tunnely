@@ -11,19 +11,18 @@ targetCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
     mavenCentral()
+    maven { url "https://www.jetbrains.com/intellij-repository/releases" }
 }
 
 dependencies {
+    implementation 'com.jetbrains.intellij.java:java-gui-forms-rt:203.7148.30' // GUI Designer Library
+    implementation 'com.formdev:flatlaf:3.5.1' // GUI Style Library
 }
 
 jar {
     duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     manifest {
         attributes 'Main-Class': 'tunnely.client.TunnelyClient'
-    }
-
-    from {
-        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
@@ -36,6 +35,19 @@ tasks.register('middlemanJar', Jar) {
     archiveBaseName.set("Tunnely-Middleman")
 }
 
+tasks.register('guiJar', Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'tunnely.client.gui.TunnelyGUI'
+    }
+    from sourceSets.main.output
+    archiveBaseName.set("Tunnely-GUI")
+    from {
+        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 artifacts {
     archives middlemanJar
+    archives guiJar
 }
