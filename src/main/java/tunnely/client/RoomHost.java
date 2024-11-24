@@ -134,7 +134,7 @@ public class RoomHost {
             while (true) {
                 byte[] bytes;
                 while (!this.isClosed() && (bytes = SocketUtil.readAny(socket.getInputStream(), 1024)) != null) {
-                    System.out.println("Data received from " + userId + ": " + SocketUtil.bytesToHexString(bytes));
+//                    System.out.println("Data received from " + userId + ": " + SocketUtil.bytesToHexString(bytes));
                     if (!trySendToMiddleman(new MemberRawDataPacket(userId, bytes))) return;
                 }
             }
